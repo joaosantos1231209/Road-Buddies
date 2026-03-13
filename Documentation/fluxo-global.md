@@ -1,6 +1,6 @@
 ```mermaid
 ---
-title: Fluxo Administrador
+title: Fluxo Global da Plataforma
 ---
 graph TD
     %% Estilos
@@ -10,18 +10,18 @@ graph TD
     classDef admin fill:#e9d5ff,stroke:#9333ea,stroke-width:2px,color:#000
     classDef sistema fill:#fef3c7,stroke:#d97706,stroke-width:2px,stroke-dasharray: 5 5,color:#000
 
-    %% Estrutura Base
-    A([Login como Admin]) --> B[Dashboard Principal]
+    %% Estrutura Base Unificada
+    A([Login ou Registo]) --> B[Dashboard Principal]
     B --> C{O que precisas de fazer?}
 
-    %% FLUXO DO CONDUTOR (Ações Comuns)
+    %% FLUXO DO CONDUTOR (Acesso: Todos)
     C -->|Oferecer Boleia| D[Criar Viagem PROVIDER]
     D --> E[Inserir: Origem, Destino, Datas e Lugares]
     E --> F[Viagem publicada no Dashboard]
     F --> G[Acompanhar em Minhas Viagens]
     G --> H([Fim: Interagir no Chat])
 
-    %% FLUXO DO PASSAGEIRO (Ações Comuns)
+    %% FLUXO DO PASSAGEIRO (Acesso: Todos)
     C -->|Procurar Boleia| I[Analisar Viagens no Dashboard]
     I --> J{Encontrou a viagem ideal?}
 
@@ -39,8 +39,8 @@ graph TD
     R -.->|Encontra Condutor| S[Envia Notificação por Email]
     S --> K
 
-    %% FLUXO DE ADMINISTRAÇÃO (Acesso Restrito)
-    C -->|Acesso Restrito| T[Aceder à Administração]
+    %% FLUXO DE ADMINISTRAÇÃO (Acesso: Restrito)
+    C -->|Acesso Restrito Admin| T[Aceder à Administração]
     T --> U{O que gerir?}
 
     U -->|Cidades| V[Gestão de Cidades]
