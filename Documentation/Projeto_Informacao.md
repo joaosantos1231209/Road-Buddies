@@ -63,6 +63,8 @@ O passageiro pode fazer 2 coisas:
 ### O Sistema
 Para que os utilizadores não tenham de perder tempo a procurar manualmente, a aplicação faz boas partes automaticamente.
 - **Matchmaking Automático**: Assim que um pedido é criado (NEEDRIDE), o sistema procura se existe algum condutor (PROVIDER) com datas compatíveis. Se houver, a plataforma avisa o utilizador.
+
+[Fluxo de Matchmaking](fluxo-matchmaking1.md)
 - **Gestão de Lugares**: Sempre que um passageiro junta-se a uma viagem, o número de lugares disponíveis nessa viagem é automaticamente atualizado, evitando excesso de reservas.
 
 [Fluxo da Gestão de Lugares](fluxo-lugares.md)
