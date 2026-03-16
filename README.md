@@ -8,10 +8,12 @@
 
 [Fluxo Global Utilizadores](Documentation/fluxo-global.md)
 
-[Fluxo de Autenticação](Documentation/fluxo-autenticacao.md)
+[Fluxo de Autenticação](Documentation/fluxo-autenticacao1.md)
+
+[Arquitetura da Base de Dados](Documentation/base-dados1.md)
 
 [Fluxo da Gestão de Lugares](Documentation/fluxo-lugares.md)
 
-[Fluxo do Algoritmo de Matchmaking Automático](Documentation/fluxo-matchmaking.md)
+[Fluxo do Algoritmo de Matchmaking Automático](Documentation/fluxo-matchmaking1.md)
 
-[Fluxo de Notificações por E-mail](Documentation/fluxo-email.md)
+[Fluxo de Notificações por E-mail](Documentation/fluxo-email1.md)

@@ -39,6 +39,11 @@ A autenticação dos diversos utilizadores é realizada através da conta google
 - **Frontend**: React com TypeScript, utilizando Tailwind CSS para estilização e ShadcnUI/Radix UI para componentes.
 - **Backend**: Node.js com a framework Express.
 - **Base de Dados**: Relacional, utilizando PostgreSQL gerida através do Drizzle ORM.
+
+[Arquitetura da Base de Dados - Explicação](base-dados1.md)
+
+[Arquitetura da Base de Dados - Diagrama](base-dados.md)
+
 - **Autenticação**: Firebase Auth, para gestão de logins (suportando Google OAuth e Email/Password).
 - **Envio de e-mail**: SendGrid, para o envio de e-mails automáticos de notificações (matches, participações, cancelamentos).
 
