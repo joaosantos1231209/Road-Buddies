@@ -21,7 +21,9 @@ Existem neste projeto 2 utilizadores essenciais:
 
 A autenticação dos diversos utilizadores é realizada através da conta google, podendo ser a conta da empresa, mas também a conta pessoal. Em alternativa, pode ser utilizado o método tradicional de e-mail e palavra-passe para quem preferir não associar a conta Google.
 
-[Fluxo de Autenticação](fluxo-autenticacao.md)
+[Fluxo de Autenticação - Explicação](fluxo-autenticacao1.md)
+
+[Fluxo de Autenticação - Diagrama](fluxo-autenticacao.md)
 
 ## Funcionalidades
 
@@ -41,9 +43,9 @@ A autenticação dos diversos utilizadores é realizada através da conta google
 - **Envio de e-mail**: SendGrid, para o envio de e-mails automáticos de notificações (matches, participações, cancelamentos).
 
 ## Fluxos de Utilização
-[Fluxo Global dos Utilizadores](fluxo-global.md)
+[Fluxo Global dos Utilizadores - Diagrama](fluxo-global.md)
 
-[Fluxo de Colaboradores](fluxo-utilizadores.md)
+[Fluxo de Colaboradores - Diagrama](fluxo-utilizadores.md)
 ### Fluxo do Condutor (PROVIDER)
 1. O colaborador acede à plataforma e cria uma nova viagem.
 2. O formulário adapta-se e pede dados precisos: origem, destino, data e hora de partida, e quantos lugares tem disponíveis.
@@ -56,7 +58,7 @@ O passageiro pode fazer 2 coisas:
 2. O passageiro não encontra nenhuma data conveniente e cria um pedido de boleia. Indicando de onde parte e para onde vai. Fica a aguardar que o sistema encontre um condutor disponível.
 
 ### Fluxo do Administrador
-[Fluxo de Administrador](fluxo-admin.md)
+[Fluxo de Administrador - Diagrama](fluxo-admin.md)
 1. O administrador faz login e acede à área reservada da administração.
 2. Na secção 'Cidades', pode fazer a gestão das cidades: adicionar ou editar as existentes e as suas coordenadas geográficas.
 3. Ao gravar, o sistema é imediatamente atualizado para todos os colaboradores.
@@ -66,13 +68,17 @@ O passageiro pode fazer 2 coisas:
 Para que os utilizadores não tenham de perder tempo a procurar manualmente, a aplicação faz boas partes automaticamente.
 - **Matchmaking Automático**: Assim que um pedido é criado (NEEDRIDE), o sistema procura se existe algum condutor (PROVIDER) com datas compatíveis. Se houver, a plataforma avisa o utilizador.
 
-[Fluxo de Matchmaking](fluxo-matchmaking1.md)
+[Fluxo de Matchmaking - Explicação](fluxo-matchmaking1.md)
+
+[Fluxo de Matchmaking - Diagrama](fluxo-matchmaking.md)
 - **Gestão de Lugares**: Sempre que um passageiro junta-se a uma viagem, o número de lugares disponíveis nessa viagem é automaticamente atualizado, evitando excesso de reservas.
 
-[Fluxo da Gestão de Lugares](fluxo-lugares.md)
+[Fluxo da Gestão de Lugares - Diagrama](fluxo-lugares.md)
 - **Gestão de Datas**: O formulário adapta-se consoante o tipo de utilizador; se for um condutor, exige que se coloque data e hora exatas, mas se for um pedido de boleia dá para colocar intervalos de tempo flexíveis.
 - **Ocultação**: Se um utilizador tinha feito um pedido de boleia, mas juntou-se a uma viagem coincidente, então o seu pedido de boleia é ocultado da dashboard.
 - **Notificações**: O sistema envia e-mails em momentos-chave: quando um match é encontrado, para informar que um utilizador se juntou à viagem, ou para avisar caso a viagem seja cancelada.
 
-[Fluxo de Notificações por E-Mail](fluxo-email1.md)
+[Fluxo de Notificações por E-Mail - Explicação](fluxo-email1.md)
+
+[Fluxo de Notificações por E-Mail - Diagrama](fluxo-email.md)
 
