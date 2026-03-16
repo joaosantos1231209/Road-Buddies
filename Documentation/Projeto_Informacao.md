@@ -21,6 +21,8 @@ Existem neste projeto 2 utilizadores essenciais:
 
 A autenticação dos diversos utilizadores é realizada através da conta google, podendo ser a conta da empresa, mas também a conta pessoal. Em alternativa, pode ser utilizado o método tradicional de e-mail e palavra-passe para quem preferir não associar a conta Google.
 
+[Fluxo de Autenticação](fluxo-autenticacao.md)
+
 ## Funcionalidades
 
 - **Dashboard**: Lista as próximas viagens disponíveis, ordenadas por data ou por localizações.
