@@ -1,0 +1,15 @@
+# Fluxo de Notificações por E-mail
+
+## Conceito e Objetivo
+
+O sistema de notificações da plataforma atua como o principal canal de comunicação assíncrona com os utilizadores. A sua função é manter condutores e passageiros informados sobre os estados das suas viagens, garantindo que ninguém perde uma boleia ou é apanhado de surpresa por um cancelamento. Para garantir a entrega fiável e evitar que as mensagens caiam no spam, a aplicação integra a API profissional do SendGrid.
+
+## Catálogos de E-Mail
+O sistema atualmente tem 5 tipos de e-mails configurados, que disparam automaticamente consoante as ações na plataforma.
+1. **Verificação de Conta**: Quando um utilizador se regista na plataforma pela primeira vez. Apenas destinado aos novos utilizadores. O e-mail contém um link de segurança único (que expira em 24 horas) para validar a propriedade do endereço de e-mail.
+2. **Notificação de Match**: Quando o algoritmo de Matchmaking deteta que uma nova oferta de viagem (PROVIDER) coincide com o pedido de um passageiro (NEEDRIDE), ou vice-versa. Apenas destinado ao passageiro (NEEDRIDE). O e-mail informa a origem, destino, data, o número de opções compatíveis e inclui um link direto para a viagem do condutor, facilitando a reserva rápida.
+3. **Confirmação de Reserva**: Quando o passageiro clica no botão de 'Juntar-se' a uma viagem. Apenas o passageiro recebe. O e-mail confirma a reserva e fornece os detalhes da viagem, o nome do condutor e o número de lugares que ainda sobram no carro.
+4. **Alerta de Novo Passageiro**: Quando um passageiro se junta a uma viagem. Apenas o condutor (PROVIDER) recebe o e-mail. O e-mail informa o condutor de que um colega (indicando o nome) acabou de reservar um lugar no seu carro, sugerindo a utilização do Chat da plataforma para combinar detalhes.
+5. **Alerta de Cancelamento**: Quando um condutor elimina uma viagem que já tinha lugares reservados. O e-mail é enviado a todos os passageiros que estavam inscritos nessa viagem. O e-mail contém um aviso urgente de que a viagem para a qual estavam inscritos entre a origem X e o destino Y, foi cancelada pelo condutor, permitindo que os passageiros procurem uma alternativa.
+
+[Fluxo das Notificações por E-mail](fluxo-email.md)

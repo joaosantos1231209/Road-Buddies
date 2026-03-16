@@ -72,3 +72,5 @@ Para que os utilizadores não tenham de perder tempo a procurar manualmente, a a
 - **Ocultação**: Se um utilizador tinha feito um pedido de boleia, mas juntou-se a uma viagem coincidente, então o seu pedido de boleia é ocultado da dashboard.
 - **Notificações**: O sistema envia e-mails em momentos-chave: quando um match é encontrado, para informar que um utilizador se juntou à viagem, ou para avisar caso a viagem seja cancelada.
 
+[Fluxo de Notificações por E-Mail](fluxo-email1.md)
+
