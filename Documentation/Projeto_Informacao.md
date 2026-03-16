@@ -63,6 +63,7 @@ O passageiro pode fazer 2 coisas:
 Para que os utilizadores não tenham de perder tempo a procurar manualmente, a aplicação faz boas partes automaticamente.
 - **Matchmaking Automático**: Assim que um pedido é criado (NEEDRIDE), o sistema procura se existe algum condutor (PROVIDER) com datas compatíveis. Se houver, a plataforma avisa o utilizador.
 - **Gestão de Lugares**: Sempre que um passageiro junta-se a uma viagem, o número de lugares disponíveis nessa viagem é automaticamente atualizado, evitando excesso de reservas.
+[Fluxo da Gestão de Lugares](fluxo-lugares.md)
 - **Gestão de Datas**: O formulário adapta-se consoante o tipo de utilizador; se for um condutor, exige que se coloque data e hora exatas, mas se for um pedido de boleia dá para colocar intervalos de tempo flexíveis.
 - **Ocultação**: Se um utilizador tinha feito um pedido de boleia, mas juntou-se a uma viagem coincidente, então o seu pedido de boleia é ocultado da dashboard.
 - **Notificações**: O sistema envia e-mails em momentos-chave: quando um match é encontrado, para informar que um utilizador se juntou à viagem, ou para avisar caso a viagem seja cancelada.
