@@ -18,4 +18,6 @@ A plataforma utiliza uma base de dados relacional PostgreSQL, gerida através da
 
 6. **Cidades (cities)**: Tabela de referência e gestão administrativa. Guarda o catálogo de cidades (nome) usadas nos formulários de criação de viagem. Sendo uma tabela independente, permite aos administradores 'ligar ou desligar' cidades sem quebrar os registos existentes. 
 
+7. **Pedidos de Viatura (sp_requests)**: Tabela de histórico de gestão de veículos. Regista todos os pedidos formais de viaturas da empresa feitos pelos colaboradores aos Serviços Partilhados, guardando a data pretendida, a origem, o destino e a justificação. Funciona como um comprovativo para o utilizador na plataforma
+
 [Diagrama da Base de Dados](base-dados.md)
