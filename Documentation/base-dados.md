@@ -12,16 +12,19 @@ erDiagram
         string firebase_id
         boolean is_email_verified
         boolean is_admin
+        string personal_vehicle_info
     }
 
     TRIPS {
         int id PK
         int user_id FK
-        string status "PROVIDER / NEEDRIDE"
+        string status 
         string origin_name
         string destination_name
         timestamp start_date
         int available_seats
+        string vehicle_type 
+        string trip_vehicle_details 
         boolean hidden
     }
 
@@ -56,10 +59,20 @@ erDiagram
         boolean is_active
     }
 
+    SP_REQUESTS {
+        int id PK
+        int user_id FK
+        string destination 
+        timestamp date_needed 
+        string justification 
+        timestamp created_at 
+    }
+
     %% Relações (Foreign Keys)
     USERS ||--o{ TRIPS : "cria (1:N)"
     USERS ||--o{ TRIP_PARTICIPANTS : "junta-se a (1:N)"
     USERS ||--o{ MESSAGES : "envia / recebe (1:N)"
+    USERS ||--o{ SP_REQUESTS : "solicita viatura (1:N)"
     
     TRIPS ||--o{ TRIP_PARTICIPANTS : "contém (1:N)"
     TRIPS ||--o{ MESSAGES : "contextualiza (1:N)"

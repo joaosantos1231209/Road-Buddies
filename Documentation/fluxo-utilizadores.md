@@ -8,15 +8,24 @@ graph TD
     classDef condutor fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#000
     classDef passageiro fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#000
     classDef sistema fill:#fef3c7,stroke:#d97706,stroke-width:2px,stroke-dasharray: 5 5,color:#000
+    classDef frota fill:#ccfbf1,stroke:#0d9488,stroke-width:2px,color:#000
 
     %% Estrutura Base
     A([Login ou Registo]) --> B[Dashboard Principal]
     B --> C{O que precisas de fazer?}
 
+    %% FLUXO DE FROTA / SP (NOVO)
+    C -->|Pedir Carro Empresa| SP1[Solicitar Viatura aos SP]
+    SP1 --> SP2[Preencher: Destino, Data e Justificação]
+    SP2 -.->|Sistema envia E-mail| SP3[Aguardar Resposta dos SP via E-mail]
+    SP3 -.->|Se Aprovado| D
+
     %% FLUXO DO CONDUTOR
     C -->|Oferecer Boleia| D[Criar Viagem PROVIDER]
-    D --> E[Inserir: Origem, Destino, Datas e Lugares]
-    E --> F[Viagem publicada no Dashboard]
+    D --> E[Inserir: Origem, Destino, Datas e Lugares Disponíveis]
+    E --> E2{Escolher Viatura}
+    E2 -->|Viatura Pessoal| F[Viagem publicada no Dashboard]
+    E2 -->|Viatura da Empresa| F
     F --> G[Acompanhar em Minhas Viagens]
     G --> H([Fim: Interagir no Chat])
 
@@ -40,7 +49,8 @@ graph TD
 
     %% Aplicar as classes
     class A,B,C login;
-    class D,E,F,G,H condutor;
+    class D,E,E2,F,G,H condutor;
     class I,J,K,L,M,O,P,Q passageiro;
     class N,R,S sistema;
+    class SP1,SP2,SP3 frota;
 ```
