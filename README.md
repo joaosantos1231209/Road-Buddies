@@ -17,3 +17,5 @@
 [Fluxo do Algoritmo de Matchmaking Automático](Documentation/fluxo-matchmaking1.md)
 
 [Fluxo de Notificações por E-mail](Documentation/fluxo-email1.md)
+
+[Fluxo de Solicitação de Viatura](Documentation/fluxo-viat.md)
