@@ -10,7 +10,7 @@ erDiagram
         string email
         string phone
         string avatar_url
-        boolean is_email_verified
+        boolean is_verified
         boolean is_admin
         string personal_vehicle_info
         timestamp created_at
@@ -20,6 +20,7 @@ erDiagram
     TRIPS {
         int id PK
         string user_id FK
+        string type
         string status 
         int origin_id FK
         int destination_id FK
@@ -28,22 +29,24 @@ erDiagram
         string vehicle_type 
         string trip_vehicle_details 
         boolean hidden
+        timestamp created_at
+        timestamp updated_at
     }
 
     TRIP_PARTICIPANTS {
         int id PK
         int trip_id FK
         string user_id FK
-        string status
+        timestamp joined_at
     }
 
     MESSAGES {
         int id PK
         string sender_id FK
-        string receiver_id FK
         int trip_id FK
         string content
-        boolean read
+        boolean is_read
+        timestamp created_at
     }
 
     MATCHES {
