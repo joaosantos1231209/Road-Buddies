@@ -21,9 +21,9 @@ Existem neste projeto 2 utilizadores essenciais:
 
 A autenticação dos diversos utilizadores é realizada através da conta google, podendo ser a conta da empresa, mas também a conta pessoal. Em alternativa, pode ser utilizado o método tradicional de e-mail e palavra-passe para quem preferir não associar a conta Google.
 
-[Fluxo de Autenticação - Explicação](fluxo-autenticacao1.md)
+[Fluxo de Autenticação - Explicação](Diagramas/fluxo-autenticacao1.md)
 
-[Fluxo de Autenticação - Diagrama](fluxo-autenticacao.md)
+[Fluxo de Autenticação - Diagrama](Diagramas/fluxo-autenticacao.md)
 
 ## Funcionalidades
 
@@ -41,17 +41,17 @@ A autenticação dos diversos utilizadores é realizada através da conta google
 - **Backend**: Node.js com a framework Express.
 - **Base de Dados**: Relacional, utilizando PostgreSQL gerida através do Drizzle ORM.
 
-[Arquitetura da Base de Dados - Explicação](base-dados1.md)
+[Arquitetura da Base de Dados - Explicação](Diagramas/base-dados1.md)
 
-[Arquitetura da Base de Dados - Diagrama](base-dados.md)
+[Arquitetura da Base de Dados - Diagrama](Diagramas/base-dados.md)
 
 - **Autenticação**: Firebase Auth, para gestão de logins (suportando Google OAuth e Email/Password).
 - **Envio de e-mail**: SendGrid, para o envio de e-mails automáticos de notificações (matches, participações, cancelamentos).
 
 ## Fluxos de Utilização
-[Fluxo Global dos Utilizadores - Diagrama](fluxo-global.md)
+[Fluxo Global dos Utilizadores - Diagrama](Diagramas/fluxo-global.md)
 
-[Fluxo de Colaboradores - Diagrama](fluxo-utilizadores.md)
+[Fluxo de Colaboradores - Diagrama](Diagramas/fluxo-utilizadores.md)
 ### Fluxo do Condutor (PROVIDER)
 1. O colaborador acede à plataforma e cria uma nova viagem.
 2. O formulário adapta-se e pede dados precisos: origem, destino, data e hora de partida, lugares disponíveis e o tipo de veículo a utilizar (Viatura pessoal ou da Empresa). Se selecionar viatura pessoal, os dados são preenchidos automaticamente através do seu perfil.
@@ -64,7 +64,7 @@ O passageiro pode fazer 2 coisas:
 2. O passageiro não encontra nenhuma data conveniente e cria um pedido de boleia. Indicando de onde parte e para onde vai. Fica a aguardar que o sistema encontre um condutor disponível.
 
 ### Fluxo de Solicitação de Viatura (Serviços Partilhados)
-[Fluxo de Solicitação de Viatura - Diagrama](fluxo-viat.md)
+[Fluxo de Solicitação de Viatura - Diagrama](Diagramas/fluxo-viat.md)
 1. O colaborador necessita de um carro da empresa para uma deslocação e acede à funcionalidade de 'Solicitar Viatura'.
 2. O formulário pré-preenche os seus dados (nome e e-mail) e solicita a origem, o destino, data e uma breve justificação.
 3. Ao submeter, a aplicação envia automaticamente um e-mail formatado para os Serviços Partilhados (SP) com os detalhes do pedido. 
@@ -72,7 +72,7 @@ O passageiro pode fazer 2 coisas:
 5. O colaborador tem acesso a um histórico na plataforma onde pode consultar todas as solicitações de viaturas que já realizou.
 
 ### Fluxo do Administrador
-[Fluxo de Administrador - Diagrama](fluxo-admin.md)
+[Fluxo de Administrador - Diagrama](Diagramas/fluxo-admin.md)
 1. O administrador faz login e acede à área reservada da administração.
 2. Na secção 'Cidades', pode fazer a gestão das cidades: adicionar ou editar as existentes e as suas coordenadas geográficas.
 3. Ao gravar, o sistema é imediatamente atualizado para todos os colaboradores.
@@ -82,17 +82,17 @@ O passageiro pode fazer 2 coisas:
 Para que os utilizadores não tenham de perder tempo a procurar manualmente, a aplicação faz boas partes automaticamente.
 - **Matchmaking Automático**: Assim que um pedido é criado (NEEDRIDE), o sistema procura se existe algum condutor (PROVIDER) com datas compatíveis. Se houver, a plataforma avisa o utilizador.
 
-[Fluxo de Matchmaking - Explicação](fluxo-matchmaking1.md)
+[Fluxo de Matchmaking - Explicação](Diagramas/fluxo-matchmaking1.md)
 
-[Fluxo de Matchmaking - Diagrama](fluxo-matchmaking.md)
+[Fluxo de Matchmaking - Diagrama](Diagramas/fluxo-matchmaking.md)
 - **Gestão de Lugares**: Sempre que um passageiro junta-se a uma viagem, o número de lugares disponíveis nessa viagem é automaticamente atualizado, evitando excesso de reservas.
 
-[Fluxo da Gestão de Lugares - Diagrama](fluxo-lugares.md)
+[Fluxo da Gestão de Lugares - Diagrama](Diagramas/fluxo-lugares.md)
 - **Gestão de Datas**: O formulário adapta-se consoante o tipo de utilizador; se for um condutor, exige que se coloque data e hora exatas, mas se for um pedido de boleia dá para colocar intervalos de tempo flexíveis.
 - **Ocultação**: Se um utilizador tinha feito um pedido de boleia, mas juntou-se a uma viagem coincidente, então o seu pedido de boleia é ocultado da dashboard.
 - **Notificações**: O sistema envia e-mails em momentos-chave: quando um match é encontrado, para informar que um utilizador se juntou à viagem, para avisar caso a viagem seja cancelada, e para encaminhar pedidos de viaturas diretamente para o departamento de Serviços Partilhados.
 
-[Fluxo de Notificações por E-Mail - Explicação](fluxo-email1.md)
+[Fluxo de Notificações por E-Mail - Explicação](Diagramas/fluxo-email1.md)
 
-[Fluxo de Notificações por E-Mail - Diagrama](fluxo-email.md)
+[Fluxo de Notificações por E-Mail - Diagrama](Diagramas/fluxo-email.md)
 
