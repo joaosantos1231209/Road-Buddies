@@ -5,23 +5,26 @@ title: Diagrama de Arquitetura da Base de Dados
 erDiagram
     %% Tabelas e Atributos Principais
     USERS {
-        int id PK
+        string id PK
         string username
         string email
         string name
         string firebase_id
+        string avatar_url
         boolean is_email_verified
         boolean is_admin
         string personal_vehicle_info
+        timestamp created_at
+        timestamp updated_at
     }
 
     TRIPS {
         int id PK
-        int user_id FK
+        string user_id FK
         string status 
-        string origin_name
-        string destination_name
-        timestamp start_date
+        int origin_id FK
+        int destination_id FK
+        timestamp departure_time
         int available_seats
         string vehicle_type 
         string trip_vehicle_details 
@@ -31,15 +34,14 @@ erDiagram
     TRIP_PARTICIPANTS {
         int id PK
         int trip_id FK
-        int user_id FK
-        int user_need_ride_trip_id FK
+        string user_id FK
         string status
     }
 
     MESSAGES {
         int id PK
-        int sender_id FK
-        int receiver_id FK
+        string sender_id FK
+        string receiver_id FK
         int trip_id FK
         string content
         boolean read
@@ -47,22 +49,21 @@ erDiagram
 
     MATCHES {
         int id PK
-        int trip_id1 FK
-        int trip_id2 FK
+        int provider_trip_id FK
+        int seeker_trip_id FK
     }
 
     CITIES {
         int id PK
         string name
-        string lat
-        string lng
         boolean is_active
+        boolean is_office
     }
 
     SP_REQUESTS {
         int id PK
-        int user_id FK
-        string destination 
+        string user_id FK
+        int destination_id FK
         timestamp date_needed 
         string justification 
         timestamp created_at 
@@ -77,4 +78,7 @@ erDiagram
     TRIPS ||--o{ TRIP_PARTICIPANTS : "contém (1:N)"
     TRIPS ||--o{ MESSAGES : "contextualiza (1:N)"
     TRIPS ||--o{ MATCHES : "emparelha com (1:N)"
+    
+    CITIES ||--o{ TRIPS : "origem / destino (1:N)"
+    CITIES ||--o{ SP_REQUESTS : "destino (1:N)"
 ```
