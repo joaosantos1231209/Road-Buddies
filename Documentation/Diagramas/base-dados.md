@@ -8,8 +8,7 @@ erDiagram
         string id PK
         string username
         string email
-        string name
-        string firebase_id
+        string phone
         string avatar_url
         boolean is_email_verified
         boolean is_admin
