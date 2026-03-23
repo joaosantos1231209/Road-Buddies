@@ -6,7 +6,7 @@ O sistema de notificações da plataforma atua como o principal canal de comunic
 
 ## Catálogos de E-Mail
 O sistema atualmente tem 5 tipos de e-mails configurados, que disparam automaticamente consoante as ações na plataforma.
-1. **Verificação de Conta**: Quando um utilizador se regista na plataforma pela primeira vez. Apenas destinado aos novos utilizadores. O e-mail contém um link de segurança único (que expira em 24 horas) para validar a propriedade do endereço de e-mail.
+1. **Verificação de Conta**: Quando um utilizador se regista na plataforma pela primeira vez. Apenas destinado aos novos utilizadores. O e-mail contém um Código OTP de Verificação único para validar a propriedade do endereço de e-mail.
 2. **Notificação de Match**: Quando o algoritmo de Matchmaking deteta que uma nova oferta de viagem (PROVIDER) coincide com o pedido de um passageiro (NEEDRIDE), ou vice-versa. Apenas destinado ao passageiro (NEEDRIDE). O e-mail informa a origem, destino, data, o número de opções compatíveis e inclui um link direto para a viagem do condutor, facilitando a reserva rápida.
 3. **Confirmação de Reserva**: Quando o passageiro clica no botão de 'Juntar-se' a uma viagem. Apenas o passageiro recebe. O e-mail confirma a reserva e fornece os detalhes da viagem, o nome do condutor e o número de lugares que ainda sobram no carro.
 4. **Alerta de Novo Passageiro**: Quando um passageiro se junta a uma viagem. Apenas o condutor (PROVIDER) recebe o e-mail. O e-mail informa o condutor de que um colega (indicando o nome) acabou de reservar um lugar no seu carro, sugerindo a utilização do Chat da plataforma para combinar detalhes.

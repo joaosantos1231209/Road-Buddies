@@ -1,9 +1,9 @@
 # Arquitetura da Base de Dados
 
 ## Conceito e Objetivo
-A plataforma utiliza uma base de dados relacional PostgreSQL, gerida através da ferramenta Drizzle ORM. A arquitetura foi desenhada para garantir a integridade dos dados, evitar duplicação de informação e suportar consultas rápidas e complexas (como as exigidas pelo Algoritmo de Matchmaking). O modelo de dados gira em torno de 7 entidades principais:
+A plataforma utiliza uma base de dados relacional PostgreSQL, gerida através da ferramenta Drizzle ORM. A arquitetura foi desenhada para garantir a integridade dos dados, evitar duplicação de informação e suportar consultas rápidas e complexas (como as exigidas pelo Algoritmo de Matchmaking). O modelo de dados gira em torno de 8 entidades principais:
 
-1. **Utilizadores (users)**: É a tabela central de identidades. Guarda tanto a informação de segurança gerida pela sincronização com o Firebase (onde o Firebase ID atua como a Chave Primária) como os dados de perfil preenchidos pelo colaborador (veículo pessoal, telemóvel, avatar). Também define quem tem privilégios de administração (is_admin).
+1. **Utilizadores (users)**: É a tabela central de identidades. Guarda a informação de segurança gerida pela sincronização com o Firebase (onde o Firebase ID atua como a Chave Primária), bem como os dados de perfil preenchidos pelo colaborador (veículo pessoal, telemóvel, avatar). Define quem tem privilégios de administração (is_admin) e agora suporta também a autenticação OTP, guardando temporariamente o código de verificação de 6 dígitos e a sua respetiva validade de expiração.
 
 2. **Viagens (trips)**: É o pilar central da organização. Esta tabela guarda dois tipos de registos distintos através da coluna 'type':
     - as ofertas de boleias dos condutores (PROVIDER);
@@ -14,10 +14,12 @@ A plataforma utiliza uma base de dados relacional PostgreSQL, gerida através da
 
 4. **Mensagens (messages)**: Suporta o chat interno da plataforma. Para garantir que as conversas têm o contexto certo, o sistema não liga a mensagem a um destinatário específico, mas sim à tabela de Viagens. Cada mensagem liga um remetente (users) a uma viagem (trips), funcionando como um chat focado nessa boleia.
 
-5. **Matches (matches)**: É a tabela de histórico de matches encontrados. Regista o momento em que o algoritmo encontrou compatibilidade entre duas viagens diferentes.
+5. **Leituras de Chat (chat_reads)**: Tabela especializada para gestão granular de notificações. Guarda, para cada utilizador e para cada viagem que ele integra, a data e hora exata em que o chat foi aberto pela última vez. Isto permite à plataforma calcular individualmente quem tem mensagens novas/não lidas num chat de grupo e ativar as notificações In-App.
 
-6. **Cidades (cities)**: Tabela de referência e gestão administrativa. Guarda o catálogo de cidades (nome) usadas nos formulários de criação de viagem. Sendo uma tabela independente, permite aos administradores 'ligar ou desligar' cidades sem quebrar os registos existentes. Permite identificar quais destas localidades são escritórios oficiais da empresa (is_office).
+6. **Matches (matches)**: É a tabela de matches encontrados. Regista o momento em que o algoritmo encontrou compatibilidade entre duas viagens diferentes. Inclui um estado de leitura fundamental (is_read) para gerir as notificações In-App e os alertas visuais nos menus.
 
-7. **Pedidos de Viatura (sp_requests)**: Tabela de histórico de gestão de veículos. Regista todos os pedidos formais de viaturas da empresa feitos pelos colaboradores aos Serviços Partilhados, guardando a data pretendida, o destino e a justificação. Funciona como um comprovativo para o utilizador na plataforma.
+7. **Cidades (cities)**: Tabela de referência e gestão administrativa. Guarda o catálogo de cidades (nome) usadas nos formulários de criação de viagem. Sendo uma tabela independente, permite aos administradores 'ligar ou desligar' cidades sem quebrar os registos existentes. Permite identificar quais destas localidades são escritórios oficiais da empresa (is_office).
+
+8. **Pedidos de Viatura (sp_requests)**: Tabela de histórico de gestão de veículos. Regista todos os pedidos formais de viaturas da empresa feitos pelos colaboradores aos Serviços Partilhados, relacionando as chaves estrangeiras de origem e destino diretamente com a tabela de cidades. Guarda também a data pretendida e a justificação, funcionando como um histórico e comprovativo para o utilizador na plataforma.
 
 [Diagrama da Base de Dados](base-dados.md)

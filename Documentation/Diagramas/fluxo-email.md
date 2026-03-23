@@ -20,7 +20,7 @@ graph LR
     API{{Integração SendGrid}}
 
     %% 4. TIPOS DE E-MAIL
-    M1[1. Verificação de Conta]
+    M1[1. Código OTP de Verificação]
     M2[2. Notificação de Match]
     M3[3. Confirmação de Reserva]
     M4[4. Alerta de Novo Passageiro]

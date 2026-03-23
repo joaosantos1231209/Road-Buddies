@@ -28,9 +28,9 @@ graph TD
     I[Bloqueia UI: Redireciona para<br>'Verificação Pendente']
     
     %% Barreira de Segurança
-    J[SendGrid: Dispara E-mail com Token de 24h]
-    K([Utilizador abre o e-mail e clica no link])
-    L[Backend valida o Token]
+    J[SendGrid: Dispara E-mail com Código OTP de 6 dígitos]
+    K([Utilizador vê o código e insere no ecrã da App])
+    L[Backend valida o Código OTP]
     M[Altera conta para 'E-mail Verificado' = true]
 
     %% 3. LIGAÇÕES
