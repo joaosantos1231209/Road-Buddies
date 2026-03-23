@@ -16,7 +16,7 @@ graph TD
 
     %% FLUXO DE FROTA / SP (NOVO)
     C -->|Pedir Carro Empresa| SP1[Solicitar Viatura aos SP]
-    SP1 --> SP2[Preencher: Destino, Data e Justificação]
+    SP1 --> SP2[Preencher: Origem, Destino, Data e Justificação]
     SP2 -.->|Sistema envia E-mail| SP3[Aguardar Resposta dos SP via E-mail]
     SP3 -.->|Se Aprovado| D
 
@@ -44,7 +44,7 @@ graph TD
     
     %% O Sistema
     Q -.->|Ação do Sistema| R{Algoritmo de Matchmaking}
-    R -.->|Encontra Condutor| S[Envia Notificação por Email]
+    R -.->|Encontra Condutor| S[Envia Notificação In-App e por E-mail]
     S --> K
 
     %% Aplicar as classes

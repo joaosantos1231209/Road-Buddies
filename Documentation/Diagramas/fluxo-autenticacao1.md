@@ -15,8 +15,8 @@ Para evitar contas falsas ou acessos indevidos, a plataforma implementa uma barr
 
 - Quando um novo utilizador é sincronizado, a sua flag de acesso é marcada como 'Requer Verificação de E-mail'.
 - O sistema bloqueia o acesso ao dashboard e redireciona o utilizador para uma página de 'Verificação Pendente'.
-- Simultaneamente, o SendGrid dispara um e-mail com um Token criptográfico único (válido por 24 horas).
-- Apenas quando o utilizador clica no link e o backend valida o token, a conta é marcada como 'Verificada' e o acesso total à plataforma é desbloqueado.
+- Simultaneamente, o SendGrid dispara um e-mail com um código OTP de 6 dígitos.
+- Apenas quando o utilizador insere o código e o backend valida , a conta é marcada como 'Verificada' e o acesso total à plataforma é desbloqueado.
 
 **NOTA**: A edição de informações adicionais, como o número de telemóvel, dados do veículo e regras de viagem, não é obrigatória no momento do registo. O utilizador pode preencher estes dados mais tarde na sua página de Perfil, garantindo uma entrada rápida e sem fricção na plataforma.
 
