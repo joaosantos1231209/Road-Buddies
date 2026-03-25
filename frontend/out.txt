@@ -1,0 +1,16 @@
+src/pages/Chat.tsx(20,17): error TS6133: 'dbUser' is declared but its value is never read.
+src/pages/Chat.tsx(69,34): error TS2353: Object literal may only specify known properties, and 'shrink' does not exist in type 'Properties<string | number, string & {}>'.
+src/pages/Dashboard.tsx(75,24): error TS6133: 'isLoading' is declared but its value is never read.
+src/pages/Dashboard.tsx(420,14): error TS2322: Type '{ width: string; minWidth: string; background: string; display: string; flexDirection: string; padding: string; boxShadow: string; }' is not assignable to type 'Properties<string | number, string & {}>'.
+  Types of property 'flexDirection' are incompatible.
+    Type 'string' is not assignable to type 'FlexDirection | undefined'.
+src/pages/Dashboard.tsx(425,14): error TS2322: Type '{ flex: number; padding: string; display: string; flexDirection: string; gap: string; }' is not assignable to type 'Properties<string | number, string & {}>'.
+  Types of property 'flexDirection' are incompatible.
+    Type 'string' is not assignable to type 'FlexDirection | undefined'.
+src/pages/Dashboard.tsx(433,19): error TS2322: Type '{ width: string; padding: string; borderRadius: string; background: string; border: string; color: string; cursor: string; fontSize: string; fontWeight: string; textAlign: string; }' is not assignable to type 'Properties<string | number, string & {}>'.
+  Types of property 'textAlign' are incompatible.
+    Type 'string' is not assignable to type 'TextAlign | undefined'.
+src/pages/Dashboard.tsx(436,13): error TS2322: Type '{ flex: number; display: string; flexDirection: string; overflow: string; }' is not assignable to type 'Properties<string | number, string & {}>'.
+  Types of property 'flexDirection' are incompatible.
+    Type 'string' is not assignable to type 'FlexDirection | undefined'.
+src/pages/Profile.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
