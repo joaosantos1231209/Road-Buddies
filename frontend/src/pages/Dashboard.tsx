@@ -158,6 +158,28 @@ export default function Dashboard() {
   const personalVehicle = getVehicleObj();
   const personalVehicleString = `${personalVehicle.brand || '---'} ${personalVehicle.plate ? `- ${personalVehicle.plate}` : ''}`.trim();
 
+  const getHistoryStatusBadge = (t: any) => {
+    if (t.status === 'CANCELLED') return <span style={S.badge("danger")}>Cancelada</span>;
+    
+    const isCreator = String(t.userId) === String(dbUser?.id);
+    const hasParticipants = Array.isArray(t.participants) && t.participants.length > 0;
+    
+    if (t.type === 'NEEDRIDE') {
+      return <span style={S.badge("yellow")}>Não correspondida</span>;
+    }
+    
+    if (t.type === 'PROVIDER') {
+      if (isCreator) {
+        return hasParticipants 
+          ? <span style={S.badge("green")}>Concluída</span>
+          : <span style={S.badge("yellow")}>Não correspondida</span>;
+      }
+      return <span style={S.badge("green")}>Concluída</span>;
+    }
+    
+    return <span style={S.badge("green")}>Concluída</span>;
+  };
+
   const getTripVehicleString = (t: any) => {
     if (t.type !== 'PROVIDER') return '';
     const fallback = t.vehicleType || "Viatura";
@@ -733,7 +755,9 @@ export default function Dashboard() {
                         <td style={S.td}>{new Date(t.departureTime).toLocaleDateString()}</td>
                         <td style={S.td}>{getCityName(t.originId)}</td>
                         <td style={S.td}>{getCityName(t.destinationId)}</td>
-                        <td style={S.td}><span style={S.badge("green")}>Concluída</span></td>
+                        <td style={S.td}>
+                          {getHistoryStatusBadge(t)}
+                        </td>
                         <td style={S.td}>
                           <button
                             style={{ ...S.btnReserve, padding: "4px 8px", fontSize: "11px" }}
@@ -797,6 +821,11 @@ export default function Dashboard() {
                       <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
                         {selectedHistoryTrip.userId === dbUser?.id ? "Condutor" : "Passageiro"}
                       </p>
+                      {selectedHistoryTrip.userId !== dbUser?.id && (
+                        <p style={{ margin: 0, fontSize: "12px", color: BRAND.textMuted }}>
+                          Condutor: {selectedHistoryTrip.creator?.username || "---"}
+                        </p>
+                      )}
                     </div>
                     {selectedHistoryTrip.userId === dbUser?.id && (
                       <div>
