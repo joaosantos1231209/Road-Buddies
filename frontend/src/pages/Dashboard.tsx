@@ -8,7 +8,7 @@ import { Profile } from './Profile';
 import { AdminPanel } from './AdminPanel';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { cn } from "@/lib/utils";
+import { cn, formatLicensePlate, isValidLicensePlate } from "@/lib/utils";
 import { ChevronsUpDown, Check, Home, CalendarDays, History, User, Settings, MessageSquare } from "lucide-react";
 
 // --- Subcomponents for City Selector ---
@@ -87,16 +87,16 @@ function Header({ onNavigate, showActions = true, userInitials = "U", userAvatar
           </>
         )}
       </div>
-      <div 
-        style={{ ...S.avatar, overflow: "hidden", background: !showFallback ? "transparent" : BRAND.accentLight, padding: !showFallback ? 0 : undefined }} 
-        onClick={() => onNavigate("perfil")} 
+      <div
+        style={{ ...S.avatar, overflow: "hidden", background: !showFallback ? "transparent" : BRAND.accentLight, padding: !showFallback ? 0 : undefined }}
+        onClick={() => onNavigate("perfil")}
         title="Ver Perfil"
       >
         {!showFallback ? (
-          <img 
-            src={userAvatar} 
-            alt="Avatar" 
-            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+          <img
+            src={userAvatar}
+            alt="Avatar"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
             onError={() => setImgError(true)}
           />
         ) : userInitials}
@@ -105,15 +105,6 @@ function Header({ onNavigate, showActions = true, userInitials = "U", userAvatar
   );
 }
 
-const formatLicensePlate = (value: string) => {
-  const clean = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-  let formatted = '';
-  for (let i = 0; i < clean.length; i++) {
-    if (i > 0 && i % 2 === 0 && i < 6) formatted += '-';
-    formatted += clean[i];
-  }
-  return formatted.slice(0, 8);
-};
 
 export default function Dashboard() {
   const { user, dbUser, logout } = useAuth();
@@ -373,6 +364,12 @@ export default function Dashboard() {
     }
   }, [activeTabMinhas, unreadMatchesCount]);
 
+  useEffect(() => {
+    if (page === 'admin' && dbUser && !dbUser.isAdmin) {
+      setPage('dashboard');
+    }
+  }, [page, dbUser?.isAdmin]);
+
   const todayStr = (() => {
     const d = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -406,6 +403,10 @@ export default function Dashboard() {
       } else {
         if (!companyBrand.trim() || !companyPlate.trim()) {
           setCreateError("Por favor, preencha todos os dados da viatura da empresa.");
+          return;
+        }
+        if (!isValidLicensePlate(companyPlate)) {
+          setCreateError("A matrícula da viatura da empresa é inválida. Use o formato XX-XX-XX.");
           return;
         }
         finalVehicleDetails = JSON.stringify({ brand: companyBrand, plate: companyPlate });
@@ -475,7 +476,7 @@ export default function Dashboard() {
                 </div>
                 <div style={{ flex: 1, background: BRAND.accentLight, borderRadius: "8px", padding: "10px", textAlign: "center" }}>
                   <p style={{ margin: 0, fontSize: "22px", fontWeight: "700", color: BRAND.accent }}>{needRideTrips.length}</p>
-                  <p style={{ margin: 0, fontSize: "11px", color: BRAND.textMuted }}>Pedidos activos</p>
+                  <p style={{ margin: 0, fontSize: "11px", color: BRAND.textMuted }}>Pedidos ativos</p>
                 </div>
               </div>
               <p style={{ margin: "12px 0 0", fontSize: "12.5px", color: BRAND.primaryLight, fontWeight: "500" }}>Ver todas as viagens →</p>
@@ -498,7 +499,7 @@ export default function Dashboard() {
                 </div>
                 <div style={{ flex: 1, background: BRAND.warningBg, borderRadius: "8px", padding: "10px", textAlign: "center" }}>
                   <p style={{ margin: 0, fontSize: "22px", fontWeight: "700", color: BRAND.warning }}>{myUpcomingTrips.length}</p>
-                  <p style={{ margin: 0, fontSize: "11px", color: BRAND.textMuted }}>Pedidos pendentes</p>
+                  <p style={{ margin: 0, fontSize: "11px", color: BRAND.textMuted }}>Viagens futuras</p>
                 </div>
               </div>
               <p style={{ margin: "12px 0 0", fontSize: "12.5px", color: BRAND.success, fontWeight: "500" }}>Ver o meu histórico →</p>
@@ -929,7 +930,7 @@ export default function Dashboard() {
             <form onSubmit={handleSubmitSp} style={S.card}>
               <div style={{ background: BRAND.primarySurface, borderRadius: "8px", padding: "12px", marginBottom: "16px", fontSize: "13px" }}>
                 <p style={{ margin: 0, fontWeight: "600", color: BRAND.primaryLight }}>Colaborador</p>
-                <p style={{ margin: "2px 0 0", color: BRAND.textMuted }}>{dbUser?.username || 'Utilizador'} · {user?.email} <span style={{ fontSize: "11px", color: BRAND.success }}>(inserido automaticamente)</span></p>
+                <p style={{ margin: "2px 0 0", color: BRAND.textMuted }}>{dbUser?.username || 'Utilizador'} · {user?.email} <span style={{ fontSize: "11px", color: BRAND.success }}></span></p>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div style={S.formGroup}>

@@ -3,16 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '../lib/firebase';
 import { S, BRAND } from '../lib/design';
+import { formatLicensePlate, isValidLicensePlate } from '../lib/utils';
 
-const formatLicensePlate = (value: string) => {
-  const clean = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-  let formatted = '';
-  for (let i = 0; i < clean.length; i++) {
-    if (i > 0 && i % 2 === 0 && i < 6) formatted += '-';
-    formatted += clean[i];
-  }
-  return formatted.slice(0, 8);
-};
 
 const fetchTrips = async (token: string) => {
   const res = await fetch('http://localhost:3000/api/trips', {
@@ -118,6 +110,11 @@ export const Profile = () => {
   };
 
   const handleSaveVehicle = () => {
+    setProfileError('');
+    if (vehiclePlate && !isValidLicensePlate(vehiclePlate)) {
+      setProfileError('A matrícula introduzida é inválida. Use o formato XX-XX-XX.');
+      return;
+    }
     const vInfoStr = JSON.stringify({ brand: vehicleBrand, plate: vehiclePlate });
     updateProfileMutation.mutate({ 
       username: dbUser?.username || '', 
