@@ -22,10 +22,9 @@ graph LR
     %% 4. TIPOS DE E-MAIL
     M1[1. Código OTP de Verificação]
     M2[2. Notificação de Match]
-    M3[3. Confirmação de Reserva]
-    M4[4. Alerta de Novo Passageiro]
-    M5[5. Aviso de Cancelamento]
-    M6[6. Solicitação de Viatura]
+    M4[3. Alerta de Novo Passageiro]
+    M5[4. Aviso de Cancelamento]
+    M6[5. Solicitação de Viatura]
 
     %% 5. DESTINATÁRIOS
     U1(Novo Utilizador)
@@ -43,7 +42,6 @@ graph LR
     
     %% O fluxo C divide-se em dois e-mails
     G3 -->|C| API
-    API -->|C| M3 -.->|Recebe| U2
     API -->|C| M4 -.->|Recebe| U3
     
     G4 -->|D| API
@@ -56,6 +54,6 @@ graph LR
     %% 7. APLICAR CORES
     class G1,G2,G3,G4,G5 gatilho;
     class API api;
-    class M1,M2,M3,M4,M5,M6 email;
+    class M1,M2,M4,M5,M6 email;
     class U1,U2,U3,U4,U5 user;
 ```
