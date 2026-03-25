@@ -56,6 +56,14 @@ export const AdminPanel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_users'] });
+    },
+    onError: (err: any) => {
+      if (err.message.includes('Forbidden')) {
+        alert("A sua sessão de administrador expirou ou os seus privilégios foram revogados. Por favor, recarregue a página.");
+        window.location.reload();
+      } else {
+        alert(err.message);
+      }
     }
   });
 
@@ -80,7 +88,12 @@ export const AdminPanel = () => {
       queryClient.invalidateQueries({ queryKey: ['cities'] });
     },
     onError: (err: any) => {
-      setCityError(err.message);
+      if (err.message.includes('Forbidden')) {
+        setCityError("Permissão negada. A sua conta deixou de ter privilégios de administrador.");
+        setTimeout(() => window.location.reload(), 3000);
+      } else {
+        setCityError(err.message);
+      }
     }
   });
 
@@ -182,7 +195,7 @@ export const AdminPanel = () => {
                         ))}
                         {totalPages > 1 && (
                           <tr>
-                            <td colSpan={4} style={{ padding: "12px", borderTop: `1px solid ${BRAND.divider}` }}>
+                            <td colSpan={4} style={{ padding: "12px", borderTop: `1px solid ${BRAND.border}` }}>
                               <div style={{ display: "flex", justifyContent: "center", gap: "10px", alignItems: "center" }}>
                                 <button 
                                   disabled={userPage === 1} 

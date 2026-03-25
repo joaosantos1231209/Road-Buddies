@@ -2,13 +2,13 @@ import express from "express";
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import type { AuthenticatedRequest } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// GET all users (Admin only ideally, but we'll enforce that via middleware or UI for simplicity in prototype)
-router.get("/", async (req, res) => {
+// GET all users (Admin only)
+router.get("/", requireAdmin, async (req, res) => {
   try {
     const allUsers = await db.select().from(users);
     res.json(allUsers);
@@ -19,13 +19,13 @@ router.get("/", async (req, res) => {
 });
 
 // Approve or Unapprove a user
-router.put("/:id/verify", async (req, res) => {
+router.put("/:id/verify", requireAdmin, async (req, res) => {
   const { isVerified } = req.body;
   try {
     const [updatedUser] = await db
       .update(users)
       .set({ isVerified: !!isVerified })
-      .where(eq(users.id, req.params.id))
+      .where(eq(users.id, req.params.id as string))
       .returning();
       
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
@@ -37,13 +37,13 @@ router.put("/:id/verify", async (req, res) => {
 });
 
 // Make or Remove Admin
-router.put("/:id/admin", async (req, res) => {
+router.put("/:id/admin", requireAdmin, async (req, res) => {
   const { isAdmin } = req.body;
   try {
     const [updatedUser] = await db
       .update(users)
       .set({ isAdmin: !!isAdmin })
-      .where(eq(users.id, req.params.id))
+      .where(eq(users.id, req.params.id as string))
       .returning();
       
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
