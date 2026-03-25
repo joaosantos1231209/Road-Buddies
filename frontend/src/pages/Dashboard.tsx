@@ -593,7 +593,11 @@ export default function Dashboard() {
                     {isMine ? (
                       <>
                         <button style={S.btnDanger} onClick={() => window.confirm('Tem a certeza que deseja cancelar esta viagem?') && cancelTripMutation.mutate(t.id)}>Cancelar</button>
-                        <button style={{ ...S.btnChat, display: "flex", alignItems: "center", gap: "6px" }} onClick={() => setLocation(`/chat/${t.id}`)}><MessageSquare size={14} /> Chat</button>
+                        {t.participants?.length > 0 && (
+                          <button style={{ ...S.btnChat, display: "flex", alignItems: "center", gap: "6px" }} onClick={() => setLocation(`/chat/${t.id}`)}>
+                            <MessageSquare size={14} /> Chat
+                          </button>
+                        )}
                       </>
                     ) : hasJoined ? (
                       <><button style={S.btnDanger} onClick={() => window.confirm('Sair desta viagem?') && leaveTripMutation.mutate(t.id)}>Sair</button>
@@ -601,10 +605,6 @@ export default function Dashboard() {
                     ) : (
                       <>
                         {isOffers && !isFull && <button style={S.btnReserve} onClick={() => joinTripMutation.mutate(t.id)}>Reservar</button>}
-                        {t.participants?.length > 0 && <button style={{ ...S.btnChat, display: "flex", alignItems: "center", gap: "6px", position: "relative" }} onClick={() => setLocation(`/chat/${t.id}`)}>
-                          <MessageSquare size={14} /> Chat
-                          {unreadChats?.unreadByTrip?.[t.id] > 0 && <span style={{ position: "absolute", top: "-4px", right: "-4px", background: BRAND.danger, color: "white", fontSize: "9px", width: "16px", height: "16px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold" }}>{unreadChats.unreadByTrip[t.id]}</span>}
-                        </button>}
                       </>
                     )}
                   </div>
@@ -666,10 +666,12 @@ export default function Dashboard() {
                           ) : (
                             <button style={S.btnDanger} onClick={() => window.confirm('Tem a certeza que deseja sair desta viagem?') && leaveTripMutation.mutate(t.id)}>Sair da Viagem</button>
                           )}
-                          {t.participants?.length > 0 && <button style={{ ...S.btnChat, display: "flex", alignItems: "center", gap: "6px", position: "relative" }} onClick={() => setLocation(`/chat/${t.id}`)}>
-                            <MessageSquare size={14} /> Chat
-                            {unreadChats?.unreadByTrip?.[t.id] > 0 && <span style={{ position: "absolute", top: "-4px", right: "-4px", background: BRAND.danger, color: "white", fontSize: "9px", width: "16px", height: "16px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold" }}>{unreadChats.unreadByTrip[t.id]}</span>}
-                          </button>}
+                          {t.participants?.length > 0 && (
+                            <button style={{ ...S.btnChat, display: "flex", alignItems: "center", gap: "6px", position: "relative" }} onClick={() => setLocation(`/chat/${t.id}`)}>
+                              <MessageSquare size={14} /> Chat
+                              {unreadChats?.unreadByTrip?.[t.id] > 0 && <span style={{ position: "absolute", top: "-4px", right: "-4px", background: BRAND.danger, color: "white", fontSize: "9px", width: "16px", height: "16px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold" }}>{unreadChats.unreadByTrip[t.id]}</span>}
+                            </button>
+                          )}
                         </div>
                         {t.userId === dbUser?.id && t.type === 'PROVIDER' && t.participants?.length > 0 && (
                           <div style={{ marginTop: "12px", padding: "10px", background: BRAND.bg, borderRadius: "6px" }}>
@@ -716,29 +718,35 @@ export default function Dashboard() {
             </div>
           )}
           {activeTabMinhas === "historico" && (
-            <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
-              <table style={S.table}>
-                <thead><tr><th style={S.th}>Data</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Estado</th><th style={S.th}>Ações</th></tr></thead>
-                <tbody>
-                  {myPastTrips.map((t: any) => (
-                    <tr key={t.id}>
-                      <td style={S.td}>{new Date(t.departureTime).toLocaleDateString()}</td>
-                      <td style={S.td}>{getCityName(t.originId)}</td>
-                      <td style={S.td}>{getCityName(t.destinationId)}</td>
-                      <td style={S.td}><span style={S.badge("green")}>Concluída</span></td>
-                      <td style={S.td}>
-                        <button
-                          style={{ ...S.btnReserve, padding: "4px 8px", fontSize: "11px" }}
-                          onClick={() => setSelectedHistoryTrip(t)}
-                        >
-                          Detalhes
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            myPastTrips.length === 0 ? (
+              <div style={{ padding: "24px", textAlign: "center", color: BRAND.textMuted, fontSize: "13px" }}>
+                Ainda não tem viagens no seu histórico.
+              </div>
+            ) : (
+              <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
+                <table style={S.table}>
+                  <thead><tr><th style={S.th}>Data</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Estado</th><th style={S.th}>Ações</th></tr></thead>
+                  <tbody>
+                    {myPastTrips.map((t: any) => (
+                      <tr key={t.id}>
+                        <td style={S.td}>{new Date(t.departureTime).toLocaleDateString()}</td>
+                        <td style={S.td}>{getCityName(t.originId)}</td>
+                        <td style={S.td}>{getCityName(t.destinationId)}</td>
+                        <td style={S.td}><span style={S.badge("green")}>Concluída</span></td>
+                        <td style={S.td}>
+                          <button
+                            style={{ ...S.btnReserve, padding: "4px 8px", fontSize: "11px" }}
+                            onClick={() => setSelectedHistoryTrip(t)}
+                          >
+                            Detalhes
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
           )}
           {activeTabMinhas === "pedidos" && (
             <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
