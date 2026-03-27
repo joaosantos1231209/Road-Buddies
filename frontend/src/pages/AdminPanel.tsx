@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '../lib/firebase';
 import { S, BRAND } from '../lib/design';
+import { API_BASE_URL } from '../lib/constants';
 
 const fetchUsers = async (token: string) => {
-  const res = await fetch('http://localhost:3000/api/users', { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch(`${API_BASE_URL}/users`, { headers: { Authorization: `Bearer ${token}` } });
   return res.json();
 };
 
 const fetchCities = async (token: string) => {
-  const res = await fetch('http://localhost:3000/api/cities', { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch(`${API_BASE_URL}/cities`, { headers: { Authorization: `Bearer ${token}` } });
   return res.json();
 };
 
@@ -53,7 +54,7 @@ export const AdminPanel = () => {
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, action, value }: { id: string, action: 'verify' | 'admin', value: boolean }) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:3000/api/users/${id}/${action}`, {
+      const res = await fetch(`${API_BASE_URL}/users/${id}/${action}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(action === 'verify' ? { isVerified: value } : { isAdmin: value })
@@ -77,7 +78,7 @@ export const AdminPanel = () => {
   const saveCityMutation = useMutation({
     mutationFn: async ({ name, isOffice, isActive }: any) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:3000/api/cities`, {
+      const res = await fetch(`${API_BASE_URL}/cities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name, isOffice, isActive })

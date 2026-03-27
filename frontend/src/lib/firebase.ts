@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { getMessaging } from "firebase/messaging";
 
 // As variáveis de ambiente do Vite começam com VITE_
 const firebaseConfig = {
@@ -13,6 +14,18 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// messaging might throw instantly if browser doesn't support it (e.g. non-HTTPS/IP)
+let messagingInstance: any = null;
+try {
+  if (typeof window !== 'undefined') {
+    messagingInstance = getMessaging(app);
+  }
+} catch (error) {
+  console.log('[FCM] Push notifications not supported in this environment.');
+}
+
+export const messaging = messagingInstance;
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 

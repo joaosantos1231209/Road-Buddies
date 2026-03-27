@@ -1,7 +1,8 @@
 import { db } from "../db/index.js";
-import { trips, matches, users } from "../db/schema.js";
+import { trips, matches, users, cities } from "../db/schema.js";
 import { eq, and, gte } from "drizzle-orm";
 import { sendMatchFoundEmail } from "./email.js";
+import { sendMatchNotification } from "./fcm.js";
 
 export const runMatchmaking = async (newTripId: number) => {
   try {
@@ -37,14 +38,27 @@ export const runMatchmaking = async (newTripId: number) => {
           status: 'PENDING'
         });
 
-        // Notifica o passageiro
+        // Notificações Push & Email
+        const providerTrip = trip.type === 'PROVIDER' ? trip : matchTrip;
         const seekerTrip = trip.type === 'NEEDRIDE' ? trip : matchTrip;
-        const passenger = await db.query.users.findFirst({
-           where: eq(users.id, seekerTrip.userId)
-        });
-        
-        if (passenger && passenger.email) {
-            sendMatchFoundEmail(passenger.email, providerTripId).catch(console.error);
+
+        const [pUser, sUser] = await Promise.all([
+           db.query.users.findFirst({ where: eq(users.id, providerTrip.userId) }),
+           db.query.users.findFirst({ where: eq(users.id, seekerTrip.userId) })
+        ]);
+
+        const destCity = await db.query.cities.findFirst({ where: eq(cities.id, providerTrip.destinationId) });
+        const tripSummary = `${new Date(providerTrip.departureTime).toLocaleDateString()} p/ ${destCity?.name || 'Destino'}`;
+
+        // Notifica Passageiro (Seeker)
+        if (sUser) {
+           if (sUser.email) sendMatchFoundEmail(sUser.email, providerTripId).catch(console.error);
+           if (sUser.fcmToken) sendMatchNotification(sUser.fcmToken, tripSummary).catch(console.error);
+        }
+
+        // Notifica Condutor (Provider) - Opcional, mas útil saber que há novos interessados
+        if (pUser && pUser.fcmToken) {
+           sendMatchNotification(pUser.fcmToken, tripSummary).catch(console.error);
         }
 
         console.log(`[Algorithm] Novo Match: ProviderTrip ${providerTripId} cruzado com SeekerTrip ${seekerTripId}`);

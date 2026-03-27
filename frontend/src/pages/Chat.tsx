@@ -4,9 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
 import { useRoute, useLocation } from 'wouter';
 import { S, BRAND } from '../lib/design';
+import { API_BASE_URL } from '../lib/constants';
 
 const fetchMessages = async (tripId: string, token: string) => {
-  const res = await fetch(`http://localhost:3000/api/messages/trip/${tripId}`, {
+  const res = await fetch(`${API_BASE_URL}/messages/trip/${tripId}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) throw new Error('Falha ao carregar mensagens');
@@ -38,7 +39,7 @@ export const Chat = () => {
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("No token");
-      const res = await fetch('http://localhost:3000/api/trips', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/trips`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json().then(d => d.trips);
     },
     enabled: !!user
@@ -48,7 +49,7 @@ export const Chat = () => {
     queryKey: ['cities'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/cities', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/cities`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json();
     },
     enabled: !!user
@@ -57,7 +58,7 @@ export const Chat = () => {
   useEffect(() => {
     if (user && tripId) {
       auth.currentUser?.getIdToken().then(token => {
-        fetch(`http://localhost:3000/api/messages/trip/${tripId}/read`, {
+        fetch(`${API_BASE_URL}/messages/trip/${tripId}/read`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` }
         }).then(() => {
@@ -76,7 +77,7 @@ export const Chat = () => {
   const sendMessageMutation = useMutation({
     mutationFn: async (msgContent: string) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:3000/api/messages/trip/${tripId}`, {
+      const res = await fetch(`${API_BASE_URL}/messages/trip/${tripId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ content: msgContent })

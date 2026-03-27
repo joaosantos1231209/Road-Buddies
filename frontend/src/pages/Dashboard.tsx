@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
 import { useLocation } from 'wouter';
 import { S, BRAND } from '../lib/design';
+import { API_BASE_URL } from '../lib/constants';
 import { Profile } from './Profile';
 import { AdminPanel } from './AdminPanel';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -61,7 +62,7 @@ function CitySelector({ value, onChange, citiesData, placeholder = 'Pesquisar ci
 }
 
 const fetchTrips = async (token: string) => {
-  const res = await fetch('http://localhost:3000/api/trips', {
+  const res = await fetch(`${API_BASE_URL}/trips`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) throw new Error('Falha ao carregar viagens');
@@ -192,7 +193,7 @@ export default function Dashboard() {
     const hasParticipants = Array.isArray(t.participants) && t.participants.length > 0;
     
     if (t.type === 'NEEDRIDE') {
-      return <span style={S.badge("yellow")}>Não correspondida</span>;
+      return <span style={S.badge("yellow")}>SEM MATCH</span>;
     }
     
     if (t.type === 'PROVIDER') {
@@ -229,7 +230,7 @@ export default function Dashboard() {
     queryKey: ['cities'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/cities', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/cities`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json();
     },
     enabled: !!user
@@ -253,7 +254,7 @@ export default function Dashboard() {
   const createTripMutation = useMutation({
     mutationFn: async (newTrip: any) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/trips', {
+      const res = await fetch(`${API_BASE_URL}/trips`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(newTrip)
@@ -277,7 +278,7 @@ export default function Dashboard() {
   const joinTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:3000/api/trips/${tripId}/join`, {
+      const res = await fetch(`${API_BASE_URL}/trips/${tripId}/join`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -296,7 +297,7 @@ export default function Dashboard() {
   const leaveTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:3000/api/trips/${tripId}/leave`, {
+      const res = await fetch(`${API_BASE_URL}/trips/${tripId}/leave`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -316,7 +317,7 @@ export default function Dashboard() {
   const cancelTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch(`http://localhost:3000/api/trips/${tripId}`, {
+      const res = await fetch(`${API_BASE_URL}/trips/${tripId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -333,7 +334,7 @@ export default function Dashboard() {
   const createSpRequestMutation = useMutation({
     mutationFn: async (data: any) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/sp-requests', {
+      const res = await fetch(`${API_BASE_URL}/sp-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(data)
@@ -359,7 +360,7 @@ export default function Dashboard() {
     queryKey: ['spRequests'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/sp-requests', {
+      const res = await fetch(`${API_BASE_URL}/sp-requests`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return [];
@@ -372,7 +373,7 @@ export default function Dashboard() {
     queryKey: ['matches'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/matches', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json().then((d: any) => d.matches || []);
     },
     enabled: !!user,
@@ -383,7 +384,7 @@ export default function Dashboard() {
     queryKey: ['unreadChats'],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/messages/unread', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/messages/unread`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json();
     },
     enabled: !!user,
@@ -393,7 +394,7 @@ export default function Dashboard() {
   const markMatchesReadMutation = useMutation({
     mutationFn: async () => {
       const token = await auth.currentUser?.getIdToken();
-      return fetch('http://localhost:3000/api/matches/mark-read', {
+      return fetch(`${API_BASE_URL}/matches/mark-read`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -842,42 +843,51 @@ export default function Dashboard() {
                     <p style={{ margin: 0, fontSize: "12px", color: BRAND.textMuted }}>{new Date(selectedHistoryTrip.departureTime).toLocaleString('pt-PT')}</p>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {selectedHistoryTrip.type === 'NEEDRIDE' && selectedHistoryTrip.userId === dbUser?.id ? (
                     <div>
                       <label style={{ ...S.label, marginBottom: "4px" }}>O seu papel</label>
-                      <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
-                        {selectedHistoryTrip.userId === dbUser?.id ? "Condutor" : "Passageiro"}
-                      </p>
-                      {selectedHistoryTrip.userId !== dbUser?.id && (
-                        <p style={{ margin: 0, fontSize: "12px", color: BRAND.textMuted }}>
-                          Condutor: {selectedHistoryTrip.creator?.username || "---"}
-                        </p>
-                      )}
+                      <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Seria passageiro</p>
                     </div>
-                    {selectedHistoryTrip.userId === dbUser?.id && (
-                      <div>
-                        <label style={{ ...S.label, marginBottom: "4px" }}>Lotação</label>
-                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
-                          {selectedHistoryTrip.participants?.length || 0} passageiro(s)
-                        </p>
+                  ) : (
+                    <>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div>
+                          <label style={{ ...S.label, marginBottom: "4px" }}>O seu papel</label>
+                          <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
+                            {selectedHistoryTrip.userId === dbUser?.id ? "Condutor" : "Passageiro"}
+                          </p>
+                          {selectedHistoryTrip.userId !== dbUser?.id && (
+                            <p style={{ margin: 0, fontSize: "12px", color: BRAND.textMuted }}>
+                              Condutor: {selectedHistoryTrip.creator?.username || "---"}
+                            </p>
+                          )}
+                        </div>
+                        {selectedHistoryTrip.userId === dbUser?.id && (
+                          <div>
+                            <label style={{ ...S.label, marginBottom: "4px" }}>Lotação</label>
+                            <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
+                              {selectedHistoryTrip.participants?.length || 0} passageiro(s)
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  <div>
-                    <label style={{ ...S.label, marginBottom: "4px" }}>Viatura Utilizada</label>
-                    {selectedHistoryTrip.userId === dbUser?.id ? (
-                      <>
-                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>{selectedHistoryTrip.vehicleType || "Viatura Pessoal"}</p>
-                        <p style={{ margin: 0, fontSize: "12px", color: BRAND.textMuted }}>{getTripVehicleString(selectedHistoryTrip)}</p>
-                      </>
-                    ) : (
-                      <>
-                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Viatura do Condutor</p>
-                        <p style={{ margin: 0, fontSize: "12px", color: BRAND.textMuted }}>{getTripVehicleString(selectedHistoryTrip)}</p>
-                      </>
-                    )}
-                  </div>
+                      <div>
+                        <label style={{ ...S.label, marginBottom: "4px" }}>Viatura Utilizada</label>
+                        {selectedHistoryTrip.userId === dbUser?.id ? (
+                          <>
+                            <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>{selectedHistoryTrip.vehicleType || "Viatura Pessoal"}</p>
+                            <p style={{ margin: 0, fontSize: "12px", color: BRAND.textMuted }}>{getTripVehicleString(selectedHistoryTrip)}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Viatura do Condutor</p>
+                            <p style={{ margin: 0, fontSize: "12px", color: BRAND.textMuted }}>{getTripVehicleString(selectedHistoryTrip)}</p>
+                          </>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <button

@@ -4,10 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '../lib/firebase';
 import { S, BRAND } from '../lib/design';
 import { formatLicensePlate, isValidLicensePlate } from '../lib/utils';
+import { API_BASE_URL } from '../lib/constants';
 
 
 const fetchTrips = async (token: string) => {
-  const res = await fetch('http://localhost:3000/api/trips', {
+  const res = await fetch(`${API_BASE_URL}/trips`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) return [];
@@ -72,7 +73,7 @@ export const Profile = () => {
   const updateProfileMutation = useMutation({
     mutationFn: async (data: { username: string, phone: string, vehicleInfo: string }) => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/users/profile', {
+      const res = await fetch(`${API_BASE_URL}/users/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(data)
