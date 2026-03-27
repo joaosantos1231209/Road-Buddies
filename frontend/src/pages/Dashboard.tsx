@@ -193,7 +193,9 @@ export default function Dashboard() {
     const hasParticipants = Array.isArray(t.participants) && t.participants.length > 0;
     
     if (t.type === 'NEEDRIDE') {
-      return <span style={S.badge("yellow")}>SEM MATCH</span>;
+      return t.status === 'MATCHED' 
+        ? <span style={S.badge("green")}>Concluída</span>
+        : <span style={S.badge("yellow")}>SEM MATCH</span>;
     }
     
     if (t.type === 'PROVIDER') {
@@ -497,6 +499,12 @@ export default function Dashboard() {
   const myPastTrips = myTripsRaw
     .filter((t: any) => new Date(t.departureTime) < now)
     .sort((a: any, b: any) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime());
+  
+  const completedCount = myPastTrips.filter((t: any) => {
+    if (t.status === 'CANCELLED') return false;
+    if (t.type === 'NEEDRIDE' && t.status !== 'MATCHED') return false;
+    return true;
+  }).length;
 
   const userInitials = (dbUser?.username || user?.email || "U").substring(0, 2).toUpperCase();
   const userAvatar = dbUser?.avatarUrl || user?.photoURL || "";
@@ -544,7 +552,7 @@ export default function Dashboard() {
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
                 <div style={{ flex: 1, background: BRAND.successBg, borderRadius: "8px", padding: "10px", textAlign: "center" }}>
-                  <p style={{ margin: 0, fontSize: "22px", fontWeight: "700", color: BRAND.success }}>{myPastTrips.length}</p>
+                  <p style={{ margin: 0, fontSize: "22px", fontWeight: "700", color: BRAND.success }}>{completedCount}</p>
                   <p style={{ margin: 0, fontSize: "11px", color: BRAND.textMuted }}>Viagens concluídas</p>
                 </div>
                 <div style={{ flex: 1, background: BRAND.warningBg, borderRadius: "8px", padding: "10px", textAlign: "center" }}>

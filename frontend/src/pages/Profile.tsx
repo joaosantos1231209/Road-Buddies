@@ -55,17 +55,33 @@ export const Profile = () => {
     if (!dbUser) return { total: 0, created: 0, completed: 0, passengers: 0 };
     const now = new Date();
     
-    const myTripsRaw = trips.filter((t: any) => t.userId === dbUser.id || t.participants?.some((p: any) => p.userId === dbUser.id));
-    const providerTrips = trips.filter((t: any) => t.userId === dbUser.id && t.type === 'PROVIDER');
+    // My trips (as creator or participant)
+    const myTripsRaw = trips.filter((t: any) => 
+      t.userId === dbUser.id || 
+      t.participants?.some((p: any) => p.userId === dbUser.id)
+    );
     
-    // Filter trips that are in the past and NOT cancelled
-    const pastProviderTrips = providerTrips.filter((t: any) => new Date(t.departureTime) < now && t.status !== 'CANCELLED');
-    const pastAllTrips = myTripsRaw.filter((t: any) => new Date(t.departureTime) < now && t.status !== 'CANCELLED');
+    // Past provider trips (not cancelled)
+    const pastProviderTrips = trips.filter((t: any) => 
+      t.userId === dbUser.id && 
+      t.type === 'PROVIDER' && 
+      new Date(t.departureTime) < now && 
+      t.status !== 'CANCELLED'
+    );
+    
+    // Past completed trips (Provider or Matched Seeker)
+    const pastCompletedTrips = myTripsRaw.filter((t: any) => {
+      const isPast = new Date(t.departureTime) < now;
+      if (!isPast || t.status === 'CANCELLED') return false;
+      // If seeker, only count if matched
+      if (t.type === 'NEEDRIDE' && t.status !== 'MATCHED') return false;
+      return true;
+    });
     
     return {
       total: myTripsRaw.length,
-      created: providerTrips.length,
-      completed: pastAllTrips.length,
+      created: pastProviderTrips.length,
+      completed: pastCompletedTrips.length,
       passengers: pastProviderTrips.reduce((acc: number, t: any) => acc + (t.participants?.length || 0), 0)
     };
   }, [trips, dbUser]);
