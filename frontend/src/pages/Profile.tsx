@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '../lib/firebase';
@@ -132,6 +132,11 @@ export const Profile = () => {
   const displayName = dbUser?.username || user?.displayName || 'Colaborador';
 
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [userAvatar]);
+
   const showFallback = !userAvatar || imgError;
 
   return (
@@ -145,6 +150,7 @@ export const Profile = () => {
               <img 
                 src={userAvatar} 
                 alt="Avatar" 
+                referrerPolicy="no-referrer"
                 style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                 onError={() => setImgError(true)}
               />

@@ -71,6 +71,11 @@ const fetchTrips = async (token: string) => {
 // --- Subcomponents for Header ---
 function Header({ onNavigate, showActions = true, userInitials = "U", userAvatar = "" }: any) {
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [userAvatar]);
+
   const showFallback = !userAvatar || imgError;
 
   return (
@@ -96,6 +101,7 @@ function Header({ onNavigate, showActions = true, userInitials = "U", userAvatar
           <img
             src={userAvatar}
             alt="Avatar"
+            referrerPolicy="no-referrer"
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
             onError={() => setImgError(true)}
           />
