@@ -7,6 +7,7 @@ import { trips, tripParticipants, matches, users, cities } from "../db/schema.js
 import { eq, and, or, inArray, ne, sql } from "drizzle-orm";
 import { runMatchmaking } from "../services/matchmaking.js";
 import { sendPassengerJoinedEmail, sendTripCancelledEmail } from "../services/email.js";
+import { sendPassengerJoinedNotification, sendTripCancelledNotification } from "../services/fcm.js";
 
 const router = Router();
 
@@ -220,6 +221,12 @@ router.post("/:id/join", async (req: AuthenticatedRequest, res: Response): Promi
       const tripInfoStr = `${originCity?.name} -> ${destCity?.name} (${new Date(tripWithDriverAndCities.departureTime).toLocaleDateString()})`;
       sendPassengerJoinedEmail(tripWithDriverAndCities.creator.email, passenger?.username || "Um colaborador", tripInfoStr).catch(console.error);
     }
+    
+    // Notify Driver via Push
+    if (tripWithDriverAndCities?.creator?.fcmToken) {
+      const tripInfoStr = `${originCity?.name} -> ${destCity?.name} (${new Date(tripWithDriverAndCities.departureTime).toLocaleDateString()})`;
+      sendPassengerJoinedNotification(tripWithDriverAndCities.creator.fcmToken, passenger?.username || "Um colaborador", tripInfoStr).catch(console.error);
+    }
 
     res.json({ message: "Juntou-se à viagem com sucesso" });
   } catch (error: any) {
@@ -358,6 +365,9 @@ router.delete("/:id", async (req: AuthenticatedRequest, res: Response): Promise<
       for (const p of trip.participants) {
         if (p.user?.email) {
           sendTripCancelledEmail(p.user.email, trip.creator?.username || "O condutor", tripInfoStr).catch(console.error);
+        }
+        if (p.user?.fcmToken) {
+          sendTripCancelledNotification(p.user.fcmToken, trip.creator?.username || "O condutor", tripInfoStr).catch(console.error);
         }
       }
     });

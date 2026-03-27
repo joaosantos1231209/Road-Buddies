@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { auth, loginWithGoogle, logout as firebaseLogout } from "../lib/firebase";
+import { API_BASE_URL } from "../lib/constants";
 
 interface AuthContextType {
   user: User | null;
@@ -32,7 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (firebaseUser) {
         try {
           const token = await firebaseUser.getIdToken();
-          const response = await fetch("http://localhost:3000/api/auth/sync", {
+          const response = await fetch(`${API_BASE_URL}/auth/sync`, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,

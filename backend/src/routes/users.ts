@@ -124,4 +124,26 @@ router.put("/profile", requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
+// Update user FCM token
+router.post("/fcm-token", requireAuth, async (req: AuthenticatedRequest, res) => {
+  const { token } = req.body;
+  const userId = req.user.uid;
+
+  if (!token) {
+    return res.status(400).json({ error: "Token is required" });
+  }
+
+  try {
+    await db
+      .update(users)
+      .set({ fcmToken: token })
+      .where(eq(users.id, userId));
+    
+    res.json({ message: "FCM token updated successfully" });
+  } catch (error: any) {
+    console.error("Erro ao atualizar FCM token:", error);
+    res.status(500).json({ error: "Failed to update FCM token" });
+  }
+});
+
 export default router;

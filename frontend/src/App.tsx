@@ -6,6 +6,8 @@ import { useState } from "react"
 import { auth } from "./lib/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
 import { S, BRAND } from "./lib/design"
+import { API_BASE_URL } from "./lib/constants"
+import { useFCM } from "./hooks/useFCM"
 
 function Home() {
   const { user, login } = useAuth();
@@ -186,7 +188,7 @@ function PendingVerification() {
     try {
       setIsSubmitting(true);
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/auth/verify', {
+      const res = await fetch(`${API_BASE_URL}/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ code }),
@@ -210,7 +212,7 @@ function PendingVerification() {
     try {
       setIsResending(true);
       const token = await auth.currentUser?.getIdToken();
-      await fetch('http://localhost:3000/api/auth/resend-code', {
+      await fetch(`${API_BASE_URL}/auth/resend-code`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -261,6 +263,7 @@ function PendingVerification() {
 
 function App() {
   const { user, dbUser, loading } = useAuth();
+  useFCM(dbUser?.isVerified ? dbUser : null);
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: BRAND.bg, display: "flex", alignItems: "center", justifyContent: "center", color: BRAND.textMuted, fontSize: "14px", fontWeight: "500" }}>

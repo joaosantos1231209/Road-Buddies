@@ -3,8 +3,9 @@ import type { Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import type { AuthenticatedRequest } from "../middleware/auth.js";
 import { db } from "../db/index.js";
-import { messages, trips, tripParticipants, chatReads } from "../db/schema.js";
+import { messages, trips, tripParticipants, chatReads, users } from "../db/schema.js";
 import { eq, and, inArray, ne } from "drizzle-orm";
+import { sendMessageNotification } from "../services/fcm.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -154,6 +155,47 @@ router.post("/trip/:tripId", async (req: AuthenticatedRequest, res: Response): P
       content,
       isRead: false
     }).returning();
+
+    // Notificar em background
+    const notifyParticipants = async () => {
+      try {
+        console.log(`[FCM] A preparar notificações para a viagem ${tripId}...`);
+        
+        const fullTrip = await db.query.trips.findFirst({
+           where: eq(trips.id, tripId),
+           with: { participants: true }
+        });
+        
+        if (!fullTrip) return;
+
+        // IDs únicos (Condutor + Passageiros)
+        const allUserIds = [fullTrip.userId, ...fullTrip.participants.map(p => p.userId)];
+        // Filtrar quem enviou a mensagem e remover duplicados
+        const targetIds = [...new Set(allUserIds)].filter(id => id !== senderId);
+
+        console.log(`[FCM] Alvos encontrados: ${targetIds.length} utilizadores.`);
+
+        if (targetIds.length > 0) {
+           const usersData = await db.query.users.findMany({ 
+              where: inArray(users.id, targetIds) 
+           });
+
+           const sender = await db.query.users.findFirst({ where: eq(users.id, senderId) });
+
+           for (const u of usersData) {
+              if (u.fcmToken) {
+                 console.log(`[FCM] A enviar para ${u.username} (Token: ${u.fcmToken.substring(0, 10)}...)`);
+                 await sendMessageNotification(u.fcmToken, sender?.username || "Um colega", content, tripId.toString()).catch(e => console.error(`[FCM] Erro ao enviar para ${u.id}:`, e));
+              } else {
+                 console.log(`[FCM] O utilizador ${u.username} não tem token de notificações.`);
+              }
+           }
+        }
+      } catch (err) { 
+        console.error("[FCM] Erro no processo de notificação de chat:", err); 
+      }
+    };
+    notifyParticipants();
 
     res.status(201).json({ message: newMessage[0] });
   } catch (error) {

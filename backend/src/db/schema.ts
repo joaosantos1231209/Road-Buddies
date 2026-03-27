@@ -14,6 +14,7 @@ export const users = pgTable('users', {
   verificationExpiry: timestamp('verification_expiry'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  fcmToken: text('fcm_token'),
 });
 
 export const cities = pgTable('cities', {
