@@ -139,10 +139,18 @@ export const Profile = () => {
 
   const showFallback = !userAvatar || imgError;
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <>
       <p style={S.pageTitle}>Perfil</p>
-      <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 1fr", gap: "16px", alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "220px 1fr 1fr", gap: "16px", alignItems: "start" }}>
         {/* Avatar card */}
         <div style={{ ...S.card, textAlign: "center", gridRow: "1 / 3" }}>
           <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: !showFallback ? "transparent" : BRAND.accentLight, border: `3px solid ${BRAND.accent}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: "24px", fontWeight: "700", color: BRAND.primaryLight, overflow: "hidden", padding: !showFallback ? 0 : undefined }}>

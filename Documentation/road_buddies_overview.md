@@ -1,57 +1,63 @@
-# Road Buddies - Guia Completo de Funcionalidades
+# Road Buddies - Guia Completo e Especificações da Plataforma
 
-A **Road Buddies** é uma plataforma corporativa de carsharing (boleias) desenhada para ligar colaboradores da LOBA, otimizar deslocações e gerir a frota da empresa de forma eficiente. Abaixo encontras o resumo detalhado de tudo o que o sistema oferece.
-
----
-
-## 1. Gestão de Conta e Perfil
-- **Autenticação Flexível**: Login via Google ou e-mail/palavra-passe.
-- **Verificação de E-mail**: Sistema de segurança que exige um código de 6 dígitos enviado por e-mail para ativar novas contas.
-- **Perfil Personalizado**:
-  - Edição de Nome e Telemóvel.
-  - Registo de Viatura Pessoal (Marca, Modelo e Matrícula com formatação automática).
-  - **Avatares Inteligentes**: Prioridade para a foto da conta Google. Se não existir (ou se a imagem falhar), o sistema gera automaticamente um círculo com as iniciais do utilizador seguindo a estética da plataforma.
-
-## 2. Gestão de Viagens (Carsharing)
-- **Oferecer Boleia (Condutor)**: Publicação de trajetos com definição de Origem, Destino, Data/Hora, Lugares e Viatura (Pessoal ou da Empresa).
-- **Pedir Boleia (Passageiro)**: Publicação de necessidades de transporte para que o sistema possa encontrar condutores compatíveis.
-- **Reservar Lugar**: Um passageiro pode juntar-se diretamente a uma oferta disponível. O condutor recebe um e-mail de notificação imediato.
-- **Filtros Avançados**: Pesquisa de viagens por Origem, Destino e Data. Os filtros de cidade permitem escrever o nome para pesquisa rápida (autocomplete).
-
-## 3. Inteligência e Validações
-- **Matchmaking em Tempo Real**: O sistema cruza automaticamente Ofertas e Pedidos. Quando há uma correspondência, ambos os utilizadores são notificados.
-- **Prevenção de Conflitos**:
-  - Não é permitido criar ou juntar-se a viagens para o mesmo dia e trajeto se já tiver uma reserva ativa.
-  - Não é permitido criar viagens onde a Origem e o Destino sejam iguais.
-- **Validação de Viaturas**: Só é possível oferecer boleia se os dados da viatura (pessoal ou empresa) estiverem devidamente preenchidos.
-
-## 4. Cancelamentos e Notificações
-- **Fluxo de Cancelamento Robusto**:
-  - Se um condutor cancela, os passageiros recebem um e-mail automático.
-  - Se um passageiro tinha um pedido original que foi "escondido" ao ser aceite, esse pedido volta a ficar **Ativo** e visível no dashboard para que possa encontrar outra boleia.
-- **Limpeza de Alertas**: Ao cancelar uma viagem, todas as notificações pendentes (bolinhas vermelhas) e matches associados são limpos automaticamente para manter o dashboard organizado.
-
-## 5. Comunicação (Chat)
-- **Chat por Viagem**: Cada viagem tem um canal de conversa privado para os participantes combinarem detalhes.
-- **Contagem de Não Lidas**: Alerta visual no menu principal sempre que existem novas mensagens.
-
-## 6. Solicitação de Viaturas (SP)
-- **Pedidos Especiais**: Para quando um colaborador precisa de uma viatura da empresa (sem ser boleia).
-- **Justificação**: Exige data e motivo, enviando um e-mail detalhado para a administração para aprovação.
-
-## 7. Painel de Administração
-- **Gestão de Utilizadores**:
-  - Lista completa com ordenação alfabética obrigatória.
-  - Pesquisa em tempo real por nome ou e-mail.
-  - Paginação (20 utilizadores por página) para performance.
-- **Gestão de Cidades**:
-  - Adição de novas localidades com validação de duplicados (evita nomes repetidos).
-  - Distinção entre Cidades e Escritórios oficiais da LOBA.
-
-## 8. Interface e Experiência (UI/UX)
-- **Design Premium**: Interface moderna baseada em tons de azul e cinza, com elementos de design "Shadcn/ui".
-- **Paginação Global**: Listas de ofertas e pedidos paginadas para facilitar a navegação.
-- **Histórico**: Acesso a todas as viagens passadas com detalhes sobre os participantes e viaturas utilizadas.
+A **Road Buddies** é uma plataforma corporativa de carsharing (boleias) topo de gama, desenhada exclusivamente para a **LOBA**. O seu objetivo é ligar colaboradores, otimizar deslocações entre escritórios e gerir a frota da empresa com uma experiência de utilizador premium e totalmente responsiva.
 
 ---
-A Road Buddies é agora uma ferramenta completa, segura e automatizada para a gestão de mobilidade na LOBA!
+
+## 1. Gestão de Utilizadores e Segurança
+*   **Autenticação Google Integrada**: Acesso rápido e seguro utilizando a conta corporativa. O sistema extrai automaticamente o nome, e-mail e foto de perfil.
+*   **Sistema de Verificação**: Novos utilizadores entram num estado "Pendente". Apenas Administradores podem verificar contas, garantindo que apenas colaboradores autorizados acedem à rede.
+*   **Perfis de Utilizador**:
+    *   **Identidade**: Nome, e-mail e telemóvel.
+    *   **Viatura Pessoal**: Possibilidade de registar marca/modelo e matrícula (com validação estrita de formato português `XX-XX-XX`).
+    *   **Avatares Dinâmicos**: O sistema utiliza a imagem do Google por defeito. Caso falhe ou não exista, gera iniciais automáticas com cores condizentes com a marca.
+
+## 2. Ecossistema de Viagens
+A plataforma divide-se em dois fluxos principais que se cruzam inteligentemente:
+*   **Ofertas de Boleia (Condutor)**:
+    *   Publicação com escolha de viatura (Pessoal ou da Empresa).
+    *   Definição de lugares disponíveis e horário preciso.
+*   **Pedidos de Boleia (Passageiro)**:
+    *   Registo de necessidade de transporte para um determinado trajeto e data.
+*   **Dashboards Inteligentes**:
+    *   **Próximas Viagens**: Lista filtrável por data e cidade (com autocomplete).
+    *   **Minhas Viagens**: Central de controlo para as viagens onde o utilizador participa, dividida em:
+        *   *Próximas*: Viagens agendadas.
+        *   *Matches*: Sugestões automáticas do sistema.
+        *   *Histórico*: Registo completo de todas as viagens passadas (mostrando condutor, participantes e viatura).
+        *   *Pedidos de Viatura*: Histórico de requisições SP.
+
+## 3. Motor de Matchmaking e Notificações
+*   **Cruzamento Automático**: O sistema analiza constantemente os pedidos e ofertas. Se houver compatibilidade de trajeto e horário, ambos os utilizadores vêem a sugestão no separador "Matches".
+*   **Alertas Visuais**: Notificações em tempo real (bolas vermelhas) no menu lateral para novas mensagens de chat ou novos matches.
+*   **Notificações por E-mail**: Envio automático de e-mails quando:
+    *   Um passageiro reserva lugar numa viagem.
+    *   Uma viagem é cancelada pelo condutor.
+
+## 4. Comunicação Integrada (Chat)
+*   **Canais Privados**: Cada viagem ativa cria automaticamente um chat de grupo para os participantes.
+*   **Gestão de Lidas**: Contagem inteligente de mensagens não lidas por utilizador e por viagem.
+
+## 5. Solicitação de Viaturas da Empresa (SP)
+*   Funcionalidade dedicada para deslocações de trabalho que requerem uma viatura da frota mas não envolvem carsharing.
+*   Inclui formulário de justificação e envio de relatório para a administração.
+
+## 6. Experiência Mobile (Responsividade Total)
+*   **Layout Adaptativo**: A interface transforma-se completamente em dispositivos móveis.
+*   **Menu Lateral (Sidebar)**: Toggle inteligente que permite navegar sem obstruir o conteúdo.
+*   **Ações de Topo**: Para manter o design limpo em ecrãs pequenos, as ações de "Criar Viagem" movem-se do cabeçalho para a sidebar, com indicações claras no topo do ecrã.
+*   **Tabelas de Scroll**: Todas as tabelas de dados suportam scroll horizontal em mobile, garantindo que colunas como "Detalhes" ou "Estado" nunca fiquem cortadas.
+
+## 7. Painel de Administração (Backoffice)
+*   **Controlo de Utilizadores**: Alteração de permissões (Tornar Admin), Verificação de contas e pesquisa global.
+*   **Base de Dados de Cidades**: Gestão da lista de destinos permitidos, com distinção entre cidades gerais e escritórios oficiais (LOBA Offices).
+
+## 8. Especificações Técnicas
+*   **Frontend**: React.js com Vite, Tailwind CSS para design responsivo e Lucide Icons.
+*   **Estado e Dados**: TanStack Query (React Query) para sincronização de dados e Wouter para rotas.
+*   **Backend**: Node.js com Express.
+*   **Base de Dados**: PostgreSQL (via Drizzle ORM) para persistência robusta.
+*   **Autenticação**: Firebase Auth (Google Provider).
+
+---
+*Documento atualizado em: 27 de Março de 2026*

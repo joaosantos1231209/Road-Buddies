@@ -9,7 +9,7 @@ import { AdminPanel } from './AdminPanel';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn, formatLicensePlate, isValidLicensePlate } from "@/lib/utils";
-import { ChevronsUpDown, Check, Home, CalendarDays, History, User, Settings, MessageSquare } from "lucide-react";
+import { ChevronsUpDown, Check, Home, CalendarDays, History, User, Settings, MessageSquare, Menu, X, Plus, Car } from "lucide-react";
 
 // --- Subcomponents for City Selector ---
 function CitySelector({ value, onChange, citiesData, placeholder = 'Pesquisar cidade...' }: { value: string, onChange: (val: string) => void, citiesData: any[], placeholder?: string }) {
@@ -69,7 +69,7 @@ const fetchTrips = async (token: string) => {
 };
 
 // --- Subcomponents for Header ---
-function Header({ onNavigate, showActions = true, userInitials = "U", userAvatar = "" }: any) {
+function Header({ onNavigate, onToggleSidebar, isMobile, showActions = true, userInitials = "U", userAvatar = "" }: any) {
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
@@ -79,21 +79,31 @@ function Header({ onNavigate, showActions = true, userInitials = "U", userAvatar
   const showFallback = !userAvatar || imgError;
 
   return (
-    <div style={S.header}>
+    <div style={{ ...S.header, padding: isMobile ? "12px 14px" : "12px 20px" }}>
       <div style={S.headerLeft}>
-        {showActions && (
-          <>
+        {isMobile && (
+          <button style={S.hmenu} onClick={onToggleSidebar}>
+            <Menu size={20} />
+          </button>
+        )}
+        {showActions && !isMobile && (
+          <div style={{ display: "flex", gap: "8px" }}>
             <button style={S.btnPrimary} onClick={() => onNavigate("solicitar")}>
               Solicitar Viatura (SP)
             </button>
             <button style={S.btnSecondary} onClick={() => onNavigate("criar")}>
               Criar Oferta / Pedido
             </button>
-          </>
+          </div>
+        )}
+        {showActions && isMobile && (
+          <span style={{ fontSize: "10px", color: BRAND.textMuted, marginLeft: "8px", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Menu Lateral (Boleias / Viaturas)
+          </span>
         )}
       </div>
       <div
-        style={{ ...S.avatar, overflow: "hidden", background: !showFallback ? "transparent" : BRAND.accentLight, padding: !showFallback ? 0 : undefined }}
+        style={{ ...S.avatar, flexShrink: 0, overflow: "hidden", background: !showFallback ? "transparent" : BRAND.accentLight, padding: !showFallback ? 0 : undefined }}
         onClick={() => onNavigate("perfil")}
         title="Ver Perfil"
       >
@@ -133,7 +143,18 @@ export default function Dashboard() {
   const [companyPlate, setCompanyPlate] = useState("");
   const [spDate, setSpDate] = useState('');
   const [spJustification, setSpJustification] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setIsSidebarOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   // Filters for Próximas Viagens
   const [filterOrigin, setFilterOrigin] = useState('');
   const [filterDestination, setFilterDestination] = useState('');
@@ -482,10 +503,10 @@ export default function Dashboard() {
   // Pages
   const renderDashboard = () => (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      <Header onNavigate={setPage} userInitials={userInitials} userAvatar={userAvatar} />
+      <Header onNavigate={setPage} onToggleSidebar={() => setIsSidebarOpen(true)} isMobile={isMobile} userInitials={userInitials} userAvatar={userAvatar} />
       <div style={S.content}>
         <p style={S.pageTitle}>Dashboard</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "20px", alignItems: "start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div style={{ ...S.card, cursor: "pointer", borderLeft: `4px solid ${BRAND.primaryLight}` }} onClick={() => setPage("proximas")}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
@@ -575,7 +596,7 @@ export default function Dashboard() {
 
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-        <Header onNavigate={setPage} userInitials={userInitials} userAvatar={userAvatar} />
+        <Header onNavigate={setPage} onToggleSidebar={() => setIsSidebarOpen(true)} isMobile={isMobile} userInitials={userInitials} userAvatar={userAvatar} />
         <div style={S.content}>
           <p style={S.pageTitle}>Próximas Viagens</p>
           <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
@@ -656,7 +677,7 @@ export default function Dashboard() {
   const renderMinhas = () => {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-        <Header onNavigate={setPage} userInitials={userInitials} userAvatar={userAvatar} />
+        <Header onNavigate={setPage} onToggleSidebar={() => setIsSidebarOpen(true)} isMobile={isMobile} userInitials={userInitials} userAvatar={userAvatar} />
         <div style={S.content}>
           <p style={S.pageTitle}>Minhas Viagens</p>
           <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
@@ -752,7 +773,7 @@ export default function Dashboard() {
                 Ainda não tem viagens no seu histórico.
               </div>
             ) : (
-              <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
+              <div style={{ ...S.card, padding: 0, overflowX: "auto" }}>
                 <table style={S.table}>
                   <thead><tr><th style={S.th}>Data</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Estado</th><th style={S.th}>Ações</th></tr></thead>
                   <tbody>
@@ -780,7 +801,7 @@ export default function Dashboard() {
             )
           )}
           {activeTabMinhas === "pedidos" && (
-            <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
+            <div style={{ ...S.card, padding: 0, overflowX: "auto" }}>
               {spRequestsData.length === 0 ? (
                 <div style={{ padding: "24px", textAlign: "center", color: BRAND.textMuted, fontSize: "13px" }}>Ainda não tem pedidos de viatura registados.</div>
               ) : (
@@ -875,7 +896,7 @@ export default function Dashboard() {
 
   const renderCriar = () => (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      <Header onNavigate={setPage} userInitials={userInitials} userAvatar={userAvatar} />
+      <Header onNavigate={setPage} onToggleSidebar={() => setIsSidebarOpen(true)} isMobile={isMobile} userInitials={userInitials} userAvatar={userAvatar} />
       <div style={S.content}>
         <p style={S.pageTitle}>Publicar no Dashboard</p>
         <div style={{ width: "100%" }}>
@@ -887,7 +908,7 @@ export default function Dashboard() {
                 <option value="PROVIDER">Condutor (oferece boleia)</option>
               </select>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
               <div style={S.formGroup}>
                 <label style={S.label}>Origem</label>
                 <CitySelector value={origin} onChange={setOrigin} citiesData={citiesData} />
@@ -897,7 +918,7 @@ export default function Dashboard() {
                 <CitySelector value={destination} onChange={setDestination} citiesData={citiesData} />
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
               <div style={S.formGroup}>
                 <label style={S.label}>Data</label>
                 <input style={S.input} type="datetime-local" value={date} min={todayStr} onChange={e => setDate(e.target.value)} required />
@@ -958,7 +979,7 @@ export default function Dashboard() {
     };
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-        <Header onNavigate={setPage} userInitials={userInitials} userAvatar={userAvatar} />
+        <Header onNavigate={setPage} onToggleSidebar={() => setIsSidebarOpen(true)} isMobile={isMobile} userInitials={userInitials} userAvatar={userAvatar} />
         <div style={S.content}>
           <p style={S.pageTitle}>Solicitar Viatura</p>
           <div style={{ width: "100%" }}>
@@ -967,7 +988,7 @@ export default function Dashboard() {
                 <p style={{ margin: 0, fontWeight: "600", color: BRAND.primaryLight }}>Colaborador</p>
                 <p style={{ margin: "2px 0 0", color: BRAND.textMuted }}>{dbUser?.username || 'Utilizador'} · {user?.email} <span style={{ fontSize: "11px", color: BRAND.success }}></span></p>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
                 <div style={S.formGroup}>
                   <label style={S.label}>Origem</label>
                   <CitySelector value={origin} onChange={setOrigin} citiesData={citiesData} />
@@ -993,8 +1014,8 @@ export default function Dashboard() {
       case 'dashboard': return renderDashboard();
       case 'proximas': return renderProximas();
       case 'minhas': return renderMinhas();
-      case 'perfil': return <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}><Header onNavigate={setPage} showActions={false} userInitials={userInitials} userAvatar={userAvatar} /><div style={S.content}><Profile /></div></div>;
-      case 'admin': return <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}><Header onNavigate={setPage} showActions={false} userInitials={userInitials} userAvatar={userAvatar} /><div style={S.content}><AdminPanel /></div></div>;
+      case 'perfil': return <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}><Header onNavigate={setPage} onToggleSidebar={() => setIsSidebarOpen(true)} isMobile={isMobile} showActions={false} userInitials={userInitials} userAvatar={userAvatar} /><div style={S.content}><Profile /></div></div>;
+      case 'admin': return <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}><Header onNavigate={setPage} onToggleSidebar={() => setIsSidebarOpen(true)} isMobile={isMobile} showActions={false} userInitials={userInitials} userAvatar={userAvatar} /><div style={S.content}><AdminPanel /></div></div>;
       case 'criar': return renderCriar();
       case 'solicitar': return renderSolicitar();
       default: return renderDashboard();
@@ -1006,19 +1027,36 @@ export default function Dashboard() {
     { id: "proximas", label: "Próximas Viagens", icon: <CalendarDays size={18} /> },
     { id: "minhas", label: "Minhas Viagens", icon: <History size={18} /> },
     { id: "perfil", label: "Perfil", icon: <User size={18} /> },
+    ...(isMobile ? [
+      { id: "criar", label: "Publicar Viagem", icon: <Plus size={18} /> },
+      { id: "solicitar", label: "Solicitar Viatura", icon: <Car size={18} /> }
+    ] : []),
     ...(dbUser?.isAdmin ? [{ id: "admin", label: "Administração", icon: <Settings size={18} /> }] : []),
   ];
 
   return (
     <div style={S.app}>
-      <aside style={S.sidebar}>
+      {isMobile && isSidebarOpen && (
+        <div style={S.overlay} onClick={() => setIsSidebarOpen(false)} />
+      )}
+      <aside style={isMobile ? S.sidebarMobile(isSidebarOpen) : S.sidebar}>
         <div style={S.logo}>
-          <p style={S.logoTitle}>Road Buddies</p>
-          <p style={S.logoSub}>Carsharing LOBA</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={S.logoTitle}>Road Buddies</p>
+              <p style={S.logoSub}>Carsharing LOBA</p>
+            </div>
+            {isMobile && (
+              <button onClick={() => setIsSidebarOpen(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer" }}>
+                <X size={20} />
+              </button>
+            )}
+          </div>
         </div>
         <nav style={S.navList}>
           {navItems.map(({ id, label, icon }) => (
-            <div key={id} style={{ ...S.navItem(page === id || (page === "criar" && id === "proximas") || (page === "solicitar" && id === "proximas")), display: "flex", alignItems: "center", gap: "10px", position: "relative" }} onClick={() => setPage(id)}>
+            <div key={id} style={{ ...S.navItem(page === id || (page === "criar" && id === "proximas") || (page === "solicitar" && id === "proximas")), display: "flex", alignItems: "center", gap: "10px", position: "relative" }} 
+              onClick={() => { setPage(id); if (isMobile) setIsSidebarOpen(false); }}>
               {icon} {label}
               {id === "minhas" && (displayUnreadMatchesCount > 0 || unreadMessagesCount > 0) && (
                 <span style={{ position: "absolute", right: "16px", top: "50%", transform: "translateY(-50%)", width: "8px", height: "8px", background: BRAND.danger, borderRadius: "50%" }} />
