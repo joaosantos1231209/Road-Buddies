@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '../lib/firebase';
 import { S, BRAND } from '../lib/design';
@@ -16,6 +16,13 @@ const fetchCities = async (token: string) => {
 export const AdminPanel = () => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState("users");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [newCityName, setNewCityName] = useState("");
   const [isOfficeCheck, setIsOfficeCheck] = useState(false);
   const [cityError, setCityError] = useState("");
@@ -227,7 +234,7 @@ export const AdminPanel = () => {
       )}
 
       {tab === "cidades" && (
-        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "16px", alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "260px 1fr", gap: "16px", alignItems: "start" }}>
           <div style={S.card}>
             <p style={{ margin: "0 0 14px", fontWeight: "600", fontSize: "14px" }}>Nova Localidade</p>
             <form onSubmit={handleAddCity}>
