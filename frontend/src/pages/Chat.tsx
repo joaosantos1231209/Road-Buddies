@@ -57,16 +57,24 @@ export const Chat = () => {
 
   useEffect(() => {
     if (user && tripId) {
-      auth.currentUser?.getIdToken().then(token => {
-        fetch(`${API_BASE_URL}/messages/trip/${tripId}/read`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(() => {
+      const markRead = async () => {
+        try {
+          const token = await auth.currentUser?.getIdToken();
+          if (!token) return;
+          await fetch(`${API_BASE_URL}/messages/trip/${tripId}/read`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          // Invalidate immediately AND after 1 second as a safety measure
           queryClient.invalidateQueries({ queryKey: ['unreadChats'] });
-        }).catch(console.error);
-      }).catch(console.error);
+          setTimeout(() => queryClient.invalidateQueries({ queryKey: ['unreadChats'] }), 1000);
+        } catch (err) {
+          console.error("Error marking chat read:", err);
+        }
+      };
+      markRead();
     }
-  }, [tripId, user, messages]);
+  }, [tripId, user, messages?.length]); // Re-run if count changes
 
   useEffect(() => {
     if (scrollRef.current) {
