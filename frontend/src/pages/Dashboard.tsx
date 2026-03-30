@@ -188,25 +188,25 @@ export default function Dashboard() {
 
   const getHistoryStatusBadge = (t: any) => {
     if (t.status === 'CANCELLED') return <span style={S.badge("danger")}>Cancelada</span>;
-    
+
     const isCreator = String(t.userId) === String(dbUser?.id);
     const hasParticipants = Array.isArray(t.participants) && t.participants.length > 0;
-    
+
     if (t.type === 'NEEDRIDE') {
-      return t.status === 'MATCHED' 
+      return t.status === 'MATCHED'
         ? <span style={S.badge("green")}>Concluída</span>
         : <span style={S.badge("yellow")}>SEM MATCH</span>;
     }
-    
+
     if (t.type === 'PROVIDER') {
       if (isCreator) {
-        return hasParticipants 
+        return hasParticipants
           ? <span style={S.badge("green")}>Concluída</span>
           : <span style={S.badge("yellow")}>Não correspondida</span>;
       }
       return <span style={S.badge("green")}>Concluída</span>;
     }
-    
+
     return <span style={S.badge("green")}>Concluída</span>;
   };
 
@@ -499,7 +499,7 @@ export default function Dashboard() {
   const myPastTrips = myTripsRaw
     .filter((t: any) => new Date(t.departureTime) < now)
     .sort((a: any, b: any) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime());
-  
+
   const completedCount = myPastTrips.filter((t: any) => {
     if (t.status === 'CANCELLED') return false;
     if (t.type === 'NEEDRIDE' && t.status !== 'MATCHED') return false;
@@ -1073,7 +1073,7 @@ export default function Dashboard() {
         </div>
         <nav style={S.navList}>
           {navItems.map(({ id, label, icon }) => (
-            <div key={id} style={{ ...S.navItem(page === id || (page === "criar" && id === "proximas") || (page === "solicitar" && id === "proximas")), display: "flex", alignItems: "center", gap: "10px", position: "relative" }} 
+            <div key={id} style={{ ...S.navItem(page === id || (page === "criar" && id === "proximas") || (page === "solicitar" && id === "proximas")), display: "flex", alignItems: "center", gap: "10px", position: "relative" }}
               onClick={() => { setPage(id); if (isMobile) setIsSidebarOpen(false); }}>
               {icon} {label}
               {id === "minhas" && (displayUnreadMatchesCount > 0 || unreadMessagesCount > 0) && (

@@ -30,16 +30,16 @@ router.get("/unread", async (req: AuthenticatedRequest, res: Response): Promise<
   try {
     const userId = req.user.uid;
 
-    const myTrips = await db.query.trips.findMany({ 
-      where: and(eq(trips.userId, userId), ne(trips.status, 'CANCELLED')) 
+    const myTrips = await db.query.trips.findMany({
+      where: and(eq(trips.userId, userId), ne(trips.status, 'CANCELLED'))
     });
-    const myJoined = await db.query.tripParticipants.findMany({ 
+    const myJoined = await db.query.tripParticipants.findMany({
       where: eq(tripParticipants.userId, userId),
       with: {
         trip: true
       }
     });
-    
+
     const activeJoinedTripIds = myJoined
       .filter(p => p.trip.status !== 'CANCELLED')
       .map(p => p.tripId);
@@ -62,12 +62,12 @@ router.get("/unread", async (req: AuthenticatedRequest, res: Response): Promise<
     let totalUnread = 0;
 
     for (const m of recentMsgs) {
-       if (m.senderId === userId) continue;
-       const lastRead = readMap.get(m.tripId) || 0;
-       if (new Date(m.createdAt).getTime() > lastRead) {
-           unreadMap[m.tripId] = (unreadMap[m.tripId] || 0) + 1;
-           totalUnread++;
-       }
+      if (m.senderId === userId) continue;
+      const lastRead = readMap.get(m.tripId) || 0;
+      if (new Date(m.createdAt).getTime() > lastRead) {
+        unreadMap[m.tripId] = (unreadMap[m.tripId] || 0) + 1;
+        totalUnread++;
+      }
     }
 
     res.json({ unreadCount: totalUnread, unreadByTrip: unreadMap });
@@ -89,13 +89,13 @@ router.post("/trip/:tripId/read", async (req: AuthenticatedRequest, res: Respons
     }
 
     const existing = await db.query.chatReads.findFirst({
-       where: and(eq(chatReads.userId, userId), eq(chatReads.tripId, tripId))
+      where: and(eq(chatReads.userId, userId), eq(chatReads.tripId, tripId))
     });
 
     if (existing) {
-       await db.update(chatReads).set({ lastReadAt: new Date() }).where(eq(chatReads.id, existing.id));
+      await db.update(chatReads).set({ lastReadAt: new Date() }).where(eq(chatReads.id, existing.id));
     } else {
-       await db.insert(chatReads).values({ userId, tripId, lastReadAt: new Date() });
+      await db.insert(chatReads).values({ userId, tripId, lastReadAt: new Date() });
     }
 
     res.json({ ok: true });
@@ -109,7 +109,7 @@ router.get("/trip/:tripId", async (req: AuthenticatedRequest, res: Response): Pr
   try {
     const tripId = parseInt(req.params.tripId as string);
     const userId = req.user.uid;
-    
+
     const trip = await verifyChatAccess(tripId, userId);
     if (!trip) {
       res.status(403).json({ error: "Forbidden: Not a participant of this trip" });
@@ -139,8 +139,8 @@ router.post("/trip/:tripId", async (req: AuthenticatedRequest, res: Response): P
     const { content } = req.body;
 
     if (!content) {
-       res.status(400).json({ error: "Missing content" });
-       return;
+      res.status(400).json({ error: "Missing content" });
+      return;
     }
 
     const trip = await verifyChatAccess(tripId, senderId);
@@ -160,12 +160,12 @@ router.post("/trip/:tripId", async (req: AuthenticatedRequest, res: Response): P
     const notifyParticipants = async () => {
       try {
         console.log(`[FCM] A preparar notificações para a viagem ${tripId}...`);
-        
+
         const fullTrip = await db.query.trips.findFirst({
-           where: eq(trips.id, tripId),
-           with: { participants: true }
+          where: eq(trips.id, tripId),
+          with: { participants: true }
         });
-        
+
         if (!fullTrip) return;
 
         // IDs únicos (Condutor + Passageiros)
@@ -176,23 +176,23 @@ router.post("/trip/:tripId", async (req: AuthenticatedRequest, res: Response): P
         console.log(`[FCM] Alvos encontrados: ${targetIds.length} utilizadores.`);
 
         if (targetIds.length > 0) {
-           const usersData = await db.query.users.findMany({ 
-              where: inArray(users.id, targetIds) 
-           });
+          const usersData = await db.query.users.findMany({
+            where: inArray(users.id, targetIds)
+          });
 
-           const sender = await db.query.users.findFirst({ where: eq(users.id, senderId) });
+          const sender = await db.query.users.findFirst({ where: eq(users.id, senderId) });
 
-           for (const u of usersData) {
-              if (u.fcmToken) {
-                 console.log(`[FCM] A enviar para ${u.username} (Token: ${u.fcmToken.substring(0, 10)}...)`);
-                 await sendMessageNotification(u.fcmToken, sender?.username || "Um colega", content, tripId.toString()).catch(e => console.error(`[FCM] Erro ao enviar para ${u.id}:`, e));
-              } else {
-                 console.log(`[FCM] O utilizador ${u.username} não tem token de notificações.`);
-              }
-           }
+          for (const u of usersData) {
+            if (u.fcmToken) {
+              console.log(`[FCM] A enviar para ${u.username} (Token: ${u.fcmToken.substring(0, 10)}...)`);
+              await sendMessageNotification(u.fcmToken, sender?.username || "Um colega", content, tripId.toString()).catch(e => console.error(`[FCM] Erro ao enviar para ${u.id}:`, e));
+            } else {
+              console.log(`[FCM] O utilizador ${u.username} não tem token de notificações.`);
+            }
+          }
         }
-      } catch (err) { 
-        console.error("[FCM] Erro no processo de notificação de chat:", err); 
+      } catch (err) {
+        console.error("[FCM] Erro no processo de notificação de chat:", err);
       }
     };
     notifyParticipants();
