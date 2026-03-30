@@ -390,7 +390,7 @@ export default function Dashboard() {
       return res.json();
     },
     enabled: !!user,
-    refetchInterval: 10000
+    refetchInterval: 5000 // Intervalo deal: rápido mas eficiente
   });
 
   const markMatchesReadMutation = useMutation({
