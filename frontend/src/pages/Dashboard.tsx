@@ -417,11 +417,51 @@ export default function Dashboard() {
     }
   });
 
+  // --- BLOCO UNIFICADO DE PREPARAÇÃO DE DADOS (Resolve ReferenceError) ---
+  const now = new Date();
+  
+  // 1. Contagens de Notificações
   const unreadMatchesCount = matchesData?.filter((m: any) => !m.isRead).length || 0;
   const unreadMessagesCount = unreadChats?.unreadCount || 0;
-
-  // Otimista: se estamos na aba matches, ignoramos o count para apagar logo a bola vermelha no menu
   const displayUnreadMatchesCount = activeTabMinhas === "matches" && page === "minhas" ? 0 : unreadMatchesCount;
+
+  // 2. Filtragem de Viagens Relacionadas
+  const upcomingTrips = trips?.filter((t: any) => new Date(t.departureTime) >= now) || [];
+  const providerTrips = upcomingTrips.filter((t: any) => {
+    if (t.type !== 'PROVIDER') return false;
+    const isMine = t.userId === dbUser?.id;
+    const isParticipant = t.participants?.some((p: any) => p.userId === dbUser?.id);
+    if (isMine || isParticipant) return false;
+    if (t.availableSeats <= 0) return false;
+    return true;
+  });
+  const needRideTrips = upcomingTrips.filter((t: any) => {
+    if (t.type !== 'NEEDRIDE') return false;
+    if (t.userId === dbUser?.id) return false;
+    return true;
+  });
+
+  const myTripsRaw = trips?.filter((t: any) => t.userId === dbUser?.id || t.participants?.some((p: any) => p.userId === dbUser?.id)) || [];
+  const myUpcomingTrips = myTripsRaw
+    .filter((t: any) => new Date(t.departureTime) >= now)
+    .sort((a: any, b: any) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime());
+  const myPastTrips = myTripsRaw
+    .filter((t: any) => new Date(t.departureTime) < now)
+    .sort((a: any, b: any) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime());
+
+  // 3. Contagens Categorizadas (Sub-abas)
+  const unreadUpcomingCount = myUpcomingTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
+  const unreadHistoryCount = myPastTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
+
+  const completedCount = myPastTrips.filter((t: any) => {
+    if (t.status === 'CANCELLED') return false;
+    if (t.type === 'NEEDRIDE' && t.status !== 'MATCHED') return false;
+    return true;
+  }).length;
+
+  const userInitials = (dbUser?.username || user?.email || "U").substring(0, 2).toUpperCase();
+  const userAvatar = dbUser?.avatarUrl || user?.photoURL || "";
+  // -----------------------------------------------------------------------
 
   useEffect(() => {
     if (activeTabMinhas === "matches" && unreadMatchesCount > 0) {
@@ -449,6 +489,11 @@ export default function Dashboard() {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setCreateError("");
+
+    if (!origin || !destination || !date) {
+      setCreateError("Por favor, selecione a origem, o destino e a data da viagem.");
+      return;
+    }
 
     if (origin === destination) {
       setCreateError("A origem e o destino têm de ser diferentes.");
@@ -489,42 +534,6 @@ export default function Dashboard() {
     });
   };
 
-  const now = new Date();
-  const upcomingTrips = trips?.filter((t: any) => new Date(t.departureTime) >= now) || [];
-  const providerTrips = upcomingTrips.filter((t: any) => {
-    if (t.type !== 'PROVIDER') return false;
-    const isMine = t.userId === dbUser?.id;
-    const isParticipant = t.participants?.some((p: any) => p.userId === dbUser?.id);
-    if (isMine || isParticipant) return false; // hide my own or trips I joined
-    if (t.availableSeats <= 0) return false; // hide full trips
-    return true;
-  });
-  const needRideTrips = upcomingTrips.filter((t: any) => {
-    if (t.type !== 'NEEDRIDE') return false;
-    if (t.userId === dbUser?.id) return false; // hide my own requests
-    return true;
-  });
-
-  const myTripsRaw = trips?.filter((t: any) => t.userId === dbUser?.id || t.participants?.some((p: any) => p.userId === dbUser?.id)) || [];
-  const myUpcomingTrips = myTripsRaw
-    .filter((t: any) => new Date(t.departureTime) >= now)
-    .sort((a: any, b: any) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime());
-  const myPastTrips = myTripsRaw
-    .filter((t: any) => new Date(t.departureTime) < now)
-    .sort((a: any, b: any) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime());
-
-  // Contagens por categoria para bolinhas das sub-abas
-  const unreadUpcomingCount = myUpcomingTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
-  const unreadHistoryCount = myPastTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
-
-  const completedCount = myPastTrips.filter((t: any) => {
-    if (t.status === 'CANCELLED') return false;
-    if (t.type === 'NEEDRIDE' && t.status !== 'MATCHED') return false;
-    return true;
-  }).length;
-
-  const userInitials = (dbUser?.username || user?.email || "U").substring(0, 2).toUpperCase();
-  const userAvatar = dbUser?.avatarUrl || user?.photoURL || "";
 
   // Pages
   const renderDashboard = () => (
@@ -1050,6 +1059,10 @@ export default function Dashboard() {
   const renderSolicitar = () => {
     const handleSubmitSp = (e: React.FormEvent) => {
       e.preventDefault();
+      if (!origin || !destination || !spDate) {
+        alert("Por favor, selecione a origem, o destino e a data pretendida.");
+        return;
+      }
       if (origin === destination) {
         alert("A origem e o destino têm de ser diferentes.");
         return;

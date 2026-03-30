@@ -19,7 +19,12 @@ router.post("/", async (req: AuthenticatedRequest, res: Response): Promise<void>
     const { originId, destinationId, dateNeeded, justification } = req.body;
     const userId = req.user.uid;
 
-    if (originId && destinationId && originId.toString() === destinationId.toString()) {
+    if (!originId || !destinationId || !dateNeeded) {
+      res.status(400).json({ error: "Por favor, selecione a origem, o destino e a data pretendida." });
+      return;
+    }
+
+    if (originId.toString() === destinationId.toString()) {
       res.status(400).json({ error: "A origem e o destino têm de ser diferentes." });
       return;
     }
