@@ -404,6 +404,19 @@ export default function Dashboard() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['matches'] }); }
   });
 
+  const markAllMessagesReadMutation = useMutation({
+    mutationFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      return fetch(`${API_BASE_URL}/messages/read-all`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unreadChats'] });
+    }
+  });
+
   const unreadMatchesCount = matchesData?.filter((m: any) => !m.isRead).length || 0;
   const unreadMessagesCount = unreadChats?.unreadCount || 0;
 
@@ -499,6 +512,10 @@ export default function Dashboard() {
   const myPastTrips = myTripsRaw
     .filter((t: any) => new Date(t.departureTime) < now)
     .sort((a: any, b: any) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime());
+
+  // Contagens por categoria para bolinhas das sub-abas
+  const unreadUpcomingCount = myUpcomingTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
+  const unreadHistoryCount = myPastTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
 
   const completedCount = myPastTrips.filter((t: any) => {
     if (t.status === 'CANCELLED') return false;
@@ -689,13 +706,50 @@ export default function Dashboard() {
         <Header onNavigate={setPage} onToggleSidebar={() => setIsSidebarOpen(true)} isMobile={isMobile} userInitials={userInitials} userAvatar={userAvatar} />
         <div style={S.content}>
           <p style={S.pageTitle}>Minhas Viagens</p>
-          <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
-            <button style={S.tab(activeTabMinhas === "proximas")} onClick={() => setActiveTabMinhas("proximas")}>Próximas Viagens</button>
-            <button style={{ ...S.tab(activeTabMinhas === "matches"), position: "relative" }} onClick={() => setActiveTabMinhas("matches")}>
-              Matches {unreadMatchesCount > 0 && <span style={{ position: "absolute", top: "6px", right: "6px", width: "8px", height: "8px", background: BRAND.danger, borderRadius: "50%" }} />}
-            </button>
-            <button style={S.tab(activeTabMinhas === "historico")} onClick={() => setActiveTabMinhas("historico")}>Histórico</button>
-            <button style={S.tab(activeTabMinhas === "pedidos")} onClick={() => setActiveTabMinhas("pedidos")}>Pedidos de Viatura</button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                style={{ ...S.tab(activeTabMinhas === "proximas"), position: "relative" }}
+                onClick={() => setActiveTabMinhas("proximas")}
+              >
+                Próximas
+                {unreadUpcomingCount > 0 && <span style={{ position: "absolute", top: "-4px", right: "-4px", width: "8px", height: "8px", background: BRAND.danger, borderRadius: "50%" }} />}
+              </button>
+              <button
+                style={{ ...S.tab(activeTabMinhas === "matches"), position: "relative" }}
+                onClick={() => setActiveTabMinhas("matches")}
+              >
+                Matches
+                {(unreadMatchesCount > 0) && <span style={{ position: "absolute", top: "-4px", right: "-4px", width: "8px", height: "8px", background: BRAND.danger, borderRadius: "50%" }} />}
+              </button>
+              <button
+                style={{ ...S.tab(activeTabMinhas === "historico"), position: "relative" }}
+                onClick={() => setActiveTabMinhas("historico")}
+              >
+                Histórico
+                {unreadHistoryCount > 0 && <span style={{ position: "absolute", top: "-4px", right: "-4px", width: "8px", height: "8px", background: BRAND.danger, borderRadius: "50%" }} />}
+              </button>
+              <button
+                style={S.tab(activeTabMinhas === "pedidos")}
+                onClick={() => setActiveTabMinhas("pedidos")}
+              >
+                Viatura
+              </button>
+            </div>
+
+            {unreadMessagesCount > 0 && (
+              <button 
+                style={{ ...S.btnSecondary, fontSize: "12px", padding: "6px 12px", border: `1px solid ${BRAND.danger}`, color: BRAND.danger, background: "none" }}
+                onClick={() => {
+                  if (window.confirm("Deseja marcar TODAS as mensagens como lidas? Isto limpará as notificações de todas as abas.")) {
+                    markAllMessagesReadMutation.mutate();
+                  }
+                }}
+                disabled={markAllMessagesReadMutation.isPending}
+              >
+                {markAllMessagesReadMutation.isPending ? "A limpar..." : "Limpar Notificações"}
+              </button>
+            )}
           </div>
           {activeTabMinhas === "proximas" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -794,12 +848,19 @@ export default function Dashboard() {
                         <td style={S.td}>
                           {getHistoryStatusBadge(t)}
                         </td>
-                        <td style={S.td}>
+                        <td style={{ ...S.td, display: "flex", gap: "6px" }}>
                           <button
                             style={{ ...S.btnReserve, padding: "4px 8px", fontSize: "11px" }}
                             onClick={() => setSelectedHistoryTrip(t)}
                           >
                             Detalhes
+                          </button>
+                          <button 
+                            style={{ ...S.btnChat, padding: "4px 8px", fontSize: "11px", position: "relative", display: "flex", alignItems: "center", gap: "4px" }} 
+                            onClick={() => setLocation(`/chat/${t.id}`)}
+                          >
+                            <MessageSquare size={10} /> Chat
+                            {unreadChats?.unreadByTrip?.[t.id] > 0 && <span style={{ position: "absolute", top: "-6px", right: "-6px", background: BRAND.danger, color: "white", fontSize: "8px", width: "12px", height: "12px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>!</span>}
                           </button>
                         </td>
                       </tr>

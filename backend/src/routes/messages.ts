@@ -102,6 +102,36 @@ router.post("/trip/:tripId/read", async (req: AuthenticatedRequest, res: Respons
   }
 });
 
+// MARCAR TUDO COMO LIDO (Definitivo para todas as viagens)
+router.post("/read-all", async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user.uid;
+
+    // 1. Buscar todas as viagens do utilizador
+    const myOwned = await db.query.trips.findMany({ where: eq(trips.userId, userId) });
+    const myJoined = await db.query.tripParticipants.findMany({ where: eq(tripParticipants.userId, userId) });
+    const relatedTripIds = [...new Set([...myOwned.map(t => t.id), ...myJoined.map(p => p.tripId)])];
+
+    if (relatedTripIds.length > 0) {
+      // 2. Apagar marcadores antigos e inserir novos para todas as viagens de uma vez
+      await db.delete(chatReads).where(and(eq(chatReads.userId, userId), inArray(chatReads.tripId, relatedTripIds)));
+      
+      const newMarkers = relatedTripIds.map(tripId => ({
+        userId,
+        tripId,
+        lastReadAt: new Date()
+      }));
+
+      await db.insert(chatReads).values(newMarkers);
+    }
+
+    res.json({ success: true, ok: true });
+  } catch (error) {
+    console.error("[READ-ALL] Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.get("/trip/:tripId", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const tripId = parseInt(req.params.tripId as string);
