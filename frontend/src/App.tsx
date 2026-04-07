@@ -9,6 +9,12 @@ import { S, BRAND } from "./lib/design"
 import { API_BASE_URL } from "./lib/constants"
 import { useFCM } from "./hooks/useFCM"
 
+const isEmailAllowed = (email: string) => {
+  const isLoba = email.toLowerCase().endsWith("@loba.com");
+  const isWhitelisted = email.toLowerCase() === "jpgomessantos1@gmail.com";
+  return isLoba || isWhitelisted;
+};
+
 function Home() {
   const { user, login } = useAuth();
   const [, setLocation] = useLocation();
@@ -62,6 +68,10 @@ function Home() {
       setErrorMsg('Please enter both email and password');
       return;
     }
+    if (!isEmailAllowed(loginEmail)) {
+      setErrorMsg('Apenas e-mails corporativos @loba.com são permitidos.');
+      return;
+    }
     try {
       setIsProcessing(true);
       await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
@@ -83,6 +93,10 @@ function Home() {
     }
     if (!registerEmail || !registerPassword) {
       setErrorMsg('Preencha todos os campos');
+      return;
+    }
+    if (!isEmailAllowed(registerEmail)) {
+      setErrorMsg('Apenas e-mails corporativos @loba.com são permitidos.');
       return;
     }
     if (registerPassword !== registerConfirmPassword) {
@@ -272,12 +286,24 @@ function App() {
   );
 
   if (user && !dbUser) {
+    const isAllowed = isEmailAllowed(user.email || "");
+
     return (
       <div style={{ minHeight: "100vh", background: BRAND.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
          <div style={{ width: "380px", background: BRAND.white, borderRadius: "16px", border: `1px solid ${BRAND.danger}`, padding: "32px", textAlign: "center" }}>
-            <p style={{ color: BRAND.danger, fontWeight: "700", fontSize: "18px", marginBottom: "8px" }}>Erro de Sincronização</p>
-            <p style={{ color: BRAND.textMuted, fontSize: "13px", marginBottom: "20px" }}>Falha ao ligar os dados de conta ao servidor. Verifique a consola.</p>
-            <button style={S.btnSecondary} onClick={() => window.location.reload()}>Tentar Novamente</button>
+            <p style={{ color: BRAND.danger, fontWeight: "700", fontSize: "18px", marginBottom: "8px" }}>
+              {isAllowed ? "Erro de Sincronização" : "Acesso Restrito"}
+            </p>
+            <p style={{ color: BRAND.textMuted, fontSize: "13px", marginBottom: "20px" }}>
+              {isAllowed 
+                ? "Falha ao ligar os dados de conta ao servidor. Tente novamente." 
+                : "Esta aplicação é exclusiva para colaboradores da LOBA. Por favor, utilize o seu e-mail corporativo."}
+            </p>
+            {isAllowed ? (
+              <button style={S.btnSecondary} onClick={() => window.location.reload()}>Tentar Novamente</button>
+            ) : (
+              <button style={{ ...S.submitBtn, background: BRAND.danger }} onClick={() => auth.signOut()}>Sair da Conta</button>
+            )}
          </div>
       </div>
     );

@@ -50,6 +50,20 @@ async function sendVerificationCode(email: string, code: string) {
 router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { uid, email, name, picture } = req.user;
+    
+    // Debug log to identify synchronization issues
+    console.log(`[Sync] User: ${name} (${email}), UID: ${uid}`);
+
+    // Email Domain Control (Case-insensitive)
+    const lowerEmail = (email || "").toLowerCase();
+    const allowedEmails = (process.env.ALLOWED_EMAILS || "").toLowerCase().split(",").map(e => e.trim());
+    const isAllowed = lowerEmail.endsWith("@loba.com") || allowedEmails.includes(lowerEmail);
+
+    if (!isAllowed) {
+      console.warn(`[Blocked Access] Attempt by ${email}`);
+      res.status(403).json({ error: "Apenas e-mails corporativos da LOBA são permitidos." });
+      return;
+    }
 
     const existingUser = await db.query.users.findFirst({ where: eq(users.id, uid) });
 
