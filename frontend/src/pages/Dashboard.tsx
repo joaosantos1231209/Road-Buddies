@@ -451,7 +451,6 @@ export default function Dashboard() {
 
   // 3. Contagens Categorizadas (Sub-abas)
   const unreadUpcomingCount = myUpcomingTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
-  const unreadHistoryCount = myPastTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
 
   const completedCount = myPastTrips.filter((t: any) => {
     if (t.status === 'CANCELLED') return false;
@@ -736,7 +735,6 @@ export default function Dashboard() {
                 onClick={() => setActiveTabMinhas("historico")}
               >
                 Histórico
-                {unreadHistoryCount > 0 && <span style={{ position: "absolute", top: "-4px", right: "-4px", width: "8px", height: "8px", background: BRAND.danger, borderRadius: "50%" }} />}
               </button>
               <button
                 style={S.tab(activeTabMinhas === "pedidos")}
@@ -863,13 +861,6 @@ export default function Dashboard() {
                             onClick={() => setSelectedHistoryTrip(t)}
                           >
                             Detalhes
-                          </button>
-                          <button 
-                            style={{ ...S.btnChat, padding: "4px 8px", fontSize: "11px", position: "relative", display: "flex", alignItems: "center", gap: "4px" }} 
-                            onClick={() => setLocation(`/chat/${t.id}`)}
-                          >
-                            <MessageSquare size={10} /> Chat
-                            {unreadChats?.unreadByTrip?.[t.id] > 0 && <span style={{ position: "absolute", top: "-6px", right: "-6px", background: BRAND.danger, color: "white", fontSize: "8px", width: "12px", height: "12px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>!</span>}
                           </button>
                         </td>
                       </tr>
