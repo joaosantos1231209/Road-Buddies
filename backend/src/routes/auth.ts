@@ -5,16 +5,14 @@ import type { AuthenticatedRequest } from "../middleware/auth.js";
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import sgMail from "@sendgrid/mail";
+import { generateVerificationCode, isEmailAllowed, isCodeExpired } from "../lib/auth-utils.js";
+import sendEmail from "../lib/email.js";
 import * as dotenv from "dotenv";
+import sgMail from "@sendgrid/mail";
 dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || "SG.mock.key");
 
 const router = Router();
-
-function generateCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
 
 async function sendVerificationCode(email: string, code: string) {
   const msg = {
@@ -54,14 +52,11 @@ router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Respons
     // Debug log to identify synchronization issues
     console.log(`[Sync] User: ${name} (${email}), UID: ${uid}`);
 
-    // Email Domain Control (Case-insensitive)
-    const lowerEmail = (email || "").toLowerCase();
-    const allowedEmails = (process.env.ALLOWED_EMAILS || "").toLowerCase().split(",").map(e => e.trim());
-    const isAllowed = lowerEmail.endsWith("@loba.com") || allowedEmails.includes(lowerEmail);
+    const allowedEmailsRaw = process.env.ALLOWED_EMAILS || "";
+    const allowedEmails = allowedEmailsRaw.split(',').map(e => e.trim()).filter(e => e.length > 0);
 
-    if (!isAllowed) {
-      console.warn(`[Blocked Access] Attempt by ${email}`);
-      res.status(403).json({ error: "Apenas e-mails corporativos da LOBA são permitidos." });
+    if (!isEmailAllowed(email, allowedEmails)) {
+      res.status(403).json({ error: "Este domínio não tem permissão para aceder à plataforma." });
       return;
     }
 
@@ -72,6 +67,7 @@ router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Respons
       if (picture) updateData.avatarUrl = picture;
       const updated = await db.update(users).set(updateData).where(eq(users.id, uid)).returning();
       res.json({ user: updated[0] });
+      return;
     } else {
       // Use displayName as username (cleaned), fallback to email prefix
       const baseUsername = name
@@ -79,7 +75,7 @@ router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Respons
         : email ? email.split("@")[0] : "user";
       const username = baseUsername + Math.floor(Math.random() * 1000);
 
-      const code = generateCode();
+      const code = generateVerificationCode();
       const expiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min
 
       const newUser = await db.insert(users).values({
@@ -98,6 +94,7 @@ router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Respons
       }
 
       res.status(201).json({ user: newUser[0] });
+      return;
     }
   } catch (error) {
     console.error("Erro a sincronizar utilizador:", error);
@@ -154,7 +151,19 @@ router.post("/resend-code", requireAuth, async (req: AuthenticatedRequest, res: 
       return;
     }
 
-    const code = generateCode();
+    const userWithCode = await db.query.users.findFirst({ where: eq(users.id, uid) });
+    if (!userWithCode) {
+      res.status(400).json({ error: "Código inválido ou expirado." });
+      return;
+    }
+
+    // Verifica expiração (30 min)
+    if (isCodeExpired(userWithCode.updatedAt, 30)) {
+      res.status(400).json({ error: "O código de verificação expirou." });
+      return;
+    }
+
+    const code = generateVerificationCode();
     const expiry = new Date(Date.now() + 30 * 60 * 1000);
 
     await db.update(users)

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { auth } from '../lib/firebase';
+//import { auth } from '../lib/firebase';
 import { S, BRAND } from '../lib/design';
 import { formatLicensePlate, isValidLicensePlate } from '../lib/utils';
 import { API_BASE_URL } from '../lib/constants';
@@ -16,7 +16,7 @@ const fetchTrips = async (token: string) => {
 };
 
 export const Profile = () => {
-  const { user, dbUser, updateDbUser } = useAuth();
+  const { user, dbUser, updateDbUser, getToken } = useAuth();
   const queryClient = useQueryClient();
 
   // Personal Info Edit State
@@ -44,7 +44,7 @@ export const Profile = () => {
   const { data: trips = [] } = useQuery({
     queryKey: ['trips'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       if (!token) throw new Error("No token");
       return fetchTrips(token);
     },
@@ -54,21 +54,21 @@ export const Profile = () => {
   const stats = useMemo(() => {
     if (!dbUser) return { total: 0, created: 0, completed: 0, passengers: 0 };
     const now = new Date();
-    
+
     // My trips (as creator or participant)
-    const myTripsRaw = trips.filter((t: any) => 
-      t.userId === dbUser.id || 
+    const myTripsRaw = trips.filter((t: any) =>
+      t.userId === dbUser.id ||
       t.participants?.some((p: any) => p.userId === dbUser.id)
     );
-    
+
     // Past provider trips (not cancelled)
-    const pastProviderTrips = trips.filter((t: any) => 
-      t.userId === dbUser.id && 
-      t.type === 'PROVIDER' && 
-      new Date(t.departureTime) < now && 
+    const pastProviderTrips = trips.filter((t: any) =>
+      t.userId === dbUser.id &&
+      t.type === 'PROVIDER' &&
+      new Date(t.departureTime) < now &&
       t.status !== 'CANCELLED'
     );
-    
+
     // Past completed trips (Provider or Matched Seeker)
     const pastCompletedTrips = myTripsRaw.filter((t: any) => {
       const isPast = new Date(t.departureTime) < now;
@@ -77,7 +77,7 @@ export const Profile = () => {
       if (t.type === 'NEEDRIDE' && t.status !== 'MATCHED') return false;
       return true;
     });
-    
+
     return {
       total: myTripsRaw.length,
       created: pastProviderTrips.length,
@@ -88,7 +88,7 @@ export const Profile = () => {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: { username: string, phone: string, vehicleInfo: string }) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/users/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -119,10 +119,10 @@ export const Profile = () => {
       setProfileError('O telemóvel deve ter exactamente 9 dígitos.');
       return;
     }
-    updateProfileMutation.mutate({ 
-      username, 
-      phone, 
-      vehicleInfo: dbUser?.vehicleInfo || '' 
+    updateProfileMutation.mutate({
+      username,
+      phone,
+      vehicleInfo: dbUser?.vehicleInfo || ''
     });
   };
 
@@ -133,14 +133,14 @@ export const Profile = () => {
       return;
     }
     const vInfoStr = JSON.stringify({ brand: vehicleBrand, plate: vehiclePlate });
-    updateProfileMutation.mutate({ 
-      username: dbUser?.username || '', 
-      phone: dbUser?.phone || '', 
-      vehicleInfo: vInfoStr 
+    updateProfileMutation.mutate({
+      username: dbUser?.username || '',
+      phone: dbUser?.phone || '',
+      vehicleInfo: vInfoStr
     });
   };
 
-  const joinedDate = dbUser?.createdAt 
+  const joinedDate = dbUser?.createdAt
     ? new Date(dbUser.createdAt).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })
     : 'março 2026';
 
@@ -172,11 +172,11 @@ export const Profile = () => {
         <div style={{ ...S.card, textAlign: "center", gridRow: "1 / 3" }}>
           <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: !showFallback ? "transparent" : BRAND.accentLight, border: `3px solid ${BRAND.accent}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: "24px", fontWeight: "700", color: BRAND.primaryLight, overflow: "hidden", padding: !showFallback ? 0 : undefined }}>
             {!showFallback ? (
-              <img 
-                src={userAvatar} 
-                alt="Avatar" 
+              <img
+                src={userAvatar}
+                alt="Avatar"
                 referrerPolicy="no-referrer"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={() => setImgError(true)}
               />
             ) : userInitials}
@@ -187,7 +187,7 @@ export const Profile = () => {
             Membro desde {joinedDate}
           </div>
         </div>
-        
+
         {/* Info pessoal */}
         <div style={S.card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -200,22 +200,22 @@ export const Profile = () => {
               }}>Editar</button>
             )}
           </div>
-          
+
           {isEditingPersonal ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-               <div>
-                  <label style={S.label}>Nome</label>
-                  <input style={S.input} value={username} onChange={e => setUsername(e.target.value)} />
-               </div>
-               <div>
-                  <label style={S.label}>Telemóvel</label>
-                  <input style={S.input} value={phone} onChange={e => setPhone(e.target.value)} />
-               </div>
-               <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                  <button style={S.btnPrimary} onClick={handleSavePersonal} disabled={updateProfileMutation.isPending}>Guardar</button>
-                  <button style={S.btnSecondary} onClick={() => { setIsEditingPersonal(false); setProfileError(''); }}>Cancelar</button>
-               </div>
-               {profileError && <p style={{ color: BRAND.danger, fontSize: '12px', marginTop: '6px' }}>{profileError}</p>}
+              <div>
+                <label style={S.label}>Nome</label>
+                <input style={S.input} value={username} onChange={e => setUsername(e.target.value)} />
+              </div>
+              <div>
+                <label style={S.label}>Telemóvel</label>
+                <input style={S.input} value={phone} onChange={e => setPhone(e.target.value)} />
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                <button style={S.btnPrimary} onClick={handleSavePersonal} disabled={updateProfileMutation.isPending}>Guardar</button>
+                <button style={S.btnSecondary} onClick={() => { setIsEditingPersonal(false); setProfileError(''); }}>Cancelar</button>
+              </div>
+              {profileError && <p style={{ color: BRAND.danger, fontSize: '12px', marginTop: '6px' }}>{profileError}</p>}
             </div>
           ) : (
             [["Nome", displayName], ["E-mail", user?.email || ""], ["Telemóvel", dbUser?.phone || "—"], ["Localização", "Portugal"]].map(([k, v]) => (
@@ -226,7 +226,7 @@ export const Profile = () => {
             ))
           )}
         </div>
-        
+
         {/* Veículo */}
         <div style={S.card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -241,21 +241,21 @@ export const Profile = () => {
             )}
           </div>
           {isEditingVehicle ? (
-             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div>
-                  <label style={S.label}>Viatura (Marca e Modelo)</label>
-                  <input style={S.input} value={vehicleBrand} onChange={e => setVehicleBrand(e.target.value)} />
-                </div>
-                <div>
-                  <label style={S.label}>Matrícula</label>
-                  <input style={S.input} value={vehiclePlate} onChange={e => setVehiclePlate(formatLicensePlate(e.target.value))} maxLength={8} />
-                </div>
-                 <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                   <button style={S.btnPrimary} onClick={handleSaveVehicle} disabled={updateProfileMutation.isPending}>Guardar</button>
-                   <button style={S.btnSecondary} onClick={() => { setIsEditingVehicle(false); setProfileError(''); }}>Cancelar</button>
-                </div>
-                {profileError && <p style={{ color: BRAND.danger, fontSize: '12px', marginTop: '6px' }}>{profileError}</p>}
-             </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <label style={S.label}>Viatura (Marca e Modelo)</label>
+                <input style={S.input} value={vehicleBrand} onChange={e => setVehicleBrand(e.target.value)} />
+              </div>
+              <div>
+                <label style={S.label}>Matrícula</label>
+                <input style={S.input} value={vehiclePlate} onChange={e => setVehiclePlate(formatLicensePlate(e.target.value))} maxLength={8} />
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                <button style={S.btnPrimary} onClick={handleSaveVehicle} disabled={updateProfileMutation.isPending}>Guardar</button>
+                <button style={S.btnSecondary} onClick={() => { setIsEditingVehicle(false); setProfileError(''); }}>Cancelar</button>
+              </div>
+              {profileError && <p style={{ color: BRAND.danger, fontSize: '12px', marginTop: '6px' }}>{profileError}</p>}
+            </div>
           ) : (
             [["Viatura", vObj.brand || "—"], ["Matrícula", vObj.plate || "—"]].map(([k, v]) => (
               <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${BRAND.border}` }}>
@@ -265,14 +265,14 @@ export const Profile = () => {
             ))
           )}
         </div>
-        
+
         {/* Estatísticas */}
         <div style={{ ...S.card, gridColumn: "2 / 4" }}>
           <p style={{ margin: "0 0 12px", fontWeight: "600", fontSize: "14px" }}>Estatísticas</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
             {[
-              ["Viagens Criadas", stats.created], 
-              ["Viagens Concluídas", stats.completed], 
+              ["Viagens Criadas", stats.created],
+              ["Viagens Concluídas", stats.completed],
               ["Pessoas Transportadas", stats.passengers]
             ].map(([k, v]) => (
               <div key={k} style={{ background: BRAND.bg, borderRadius: "8px", padding: "12px", textAlign: "center" }}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { auth } from '../lib/firebase';
+// import { auth } from '../lib/firebase'; 
+import { useAuth } from '../contexts/AuthContext';
 import { S, BRAND } from '../lib/design';
 import { API_BASE_URL } from '../lib/constants';
 
@@ -15,7 +16,7 @@ const fetchCities = async (token: string) => {
 };
 
 export const AdminPanel = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient(); const { getToken } = useAuth();
   const [tab, setTab] = useState("users");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
@@ -36,7 +37,7 @@ export const AdminPanel = () => {
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['admin_users'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       if (!token) throw new Error("No token");
       return fetchUsers(token);
     }
@@ -45,7 +46,7 @@ export const AdminPanel = () => {
   const { data: cities, isLoading: citiesLoading } = useQuery({
     queryKey: ['cities'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       if (!token) throw new Error("No token");
       return fetchCities(token);
     }
@@ -53,7 +54,7 @@ export const AdminPanel = () => {
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, action, value }: { id: string, action: 'verify' | 'admin', value: boolean }) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/users/${id}/${action}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -77,7 +78,7 @@ export const AdminPanel = () => {
 
   const saveCityMutation = useMutation({
     mutationFn: async ({ name, isOffice, isActive }: any) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/cities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -127,7 +128,7 @@ export const AdminPanel = () => {
   return (
     <>
       <p style={S.pageTitle}>Administração</p>
-      
+
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
         <button style={S.tab(tab === "users")} onClick={() => setTab("users")}>Utilizadores e Permissões</button>
         <button style={S.tab(tab === "cidades")} onClick={() => setTab("cidades")}>Escritórios e Cidades</button>
@@ -136,9 +137,9 @@ export const AdminPanel = () => {
       {tab === "users" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <input 
-              style={{ ...S.input, maxWidth: "300px" }} 
-              placeholder="Pesquisar por nome ou e-mail..." 
+            <input
+              style={{ ...S.input, maxWidth: "300px" }}
+              placeholder="Pesquisar por nome ou e-mail..."
               value={userSearch}
               onChange={e => { setUserSearch(e.target.value); setUserPage(1); }}
             />
@@ -154,21 +155,21 @@ export const AdminPanel = () => {
                 </tr></thead>
                 <tbody>
                   {usersLoading ? (
-                    <tr><td colSpan={4} style={{...S.td, textAlign: "center"}}>A carregar...</td></tr>
+                    <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>A carregar...</td></tr>
                   ) : (() => {
                     const filtered = (users || [])
-                      .filter((u: any) => 
-                        (u.username || "").toLowerCase().includes(userSearch.toLowerCase()) || 
+                      .filter((u: any) =>
+                        (u.username || "").toLowerCase().includes(userSearch.toLowerCase()) ||
                         (u.email || "").toLowerCase().includes(userSearch.toLowerCase())
                       )
                       .sort((a: any, b: any) => (a.username || "").localeCompare(b.username || ""));
-                    
+
                     const totalPages = Math.ceil(filtered.length / usersPerPage);
                     const start = (userPage - 1) * usersPerPage;
                     const paginated = filtered.slice(start, start + usersPerPage);
 
                     if (paginated.length === 0) {
-                      return <tr><td colSpan={4} style={{...S.td, textAlign: "center"}}>Nenhum utilizador encontrado.</td></tr>;
+                      return <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>Nenhum utilizador encontrado.</td></tr>;
                     }
 
                     return (
@@ -188,14 +189,14 @@ export const AdminPanel = () => {
                             <td style={S.td}>
                               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                                 {u.isVerified ? (
-                                   <button style={{ ...S.btnDanger, padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleVerification(u.id, u.isVerified)}>Revogar Acesso</button>
+                                  <button style={{ ...S.btnDanger, padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleVerification(u.id, u.isVerified)}>Revogar Acesso</button>
                                 ) : (
-                                   <button style={{ ...S.btnReserve, padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleVerification(u.id, u.isVerified)}>Aprovar Conta</button>
+                                  <button style={{ ...S.btnReserve, padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleVerification(u.id, u.isVerified)}>Aprovar Conta</button>
                                 )}
                                 {u.isAdmin ? (
-                                   <button style={{ ...S.btnSecondary, padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleAdmin(u.id, u.isAdmin)}>Remover Admin</button>
+                                  <button style={{ ...S.btnSecondary, padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleAdmin(u.id, u.isAdmin)}>Remover Admin</button>
                                 ) : (
-                                   <button style={{ ...S.btnSecondary, padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleAdmin(u.id, u.isAdmin)}>Tornar Admin</button>
+                                  <button style={{ ...S.btnSecondary, padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleAdmin(u.id, u.isAdmin)}>Tornar Admin</button>
                                 )}
                               </div>
                             </td>
@@ -205,16 +206,16 @@ export const AdminPanel = () => {
                           <tr>
                             <td colSpan={4} style={{ padding: "12px", borderTop: `1px solid ${BRAND.border}` }}>
                               <div style={{ display: "flex", justifyContent: "center", gap: "10px", alignItems: "center" }}>
-                                <button 
-                                  disabled={userPage === 1} 
+                                <button
+                                  disabled={userPage === 1}
                                   onClick={() => setUserPage(p => p - 1)}
                                   style={{ ...S.btnSecondary, padding: "4px 12px", fontSize: "12px" }}
                                 >
                                   Anterior
                                 </button>
                                 <span style={{ fontSize: "12px", fontWeight: "600" }}>Página {userPage} de {totalPages}</span>
-                                <button 
-                                  disabled={userPage === totalPages} 
+                                <button
+                                  disabled={userPage === totalPages}
                                   onClick={() => setUserPage(p => p + 1)}
                                   style={{ ...S.btnSecondary, padding: "4px 12px", fontSize: "12px" }}
                                 >
@@ -250,34 +251,34 @@ export const AdminPanel = () => {
               {cityError && <p style={{ color: BRAND.danger, fontSize: "12px", marginTop: "8px" }}>{cityError}</p>}
             </form>
           </div>
-          
+
           <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
-             <div style={{ overflowX: "auto" }}>
-                <table style={S.table}>
-                  <thead><tr>
-                    <th style={S.th}>Localidade</th>
-                    <th style={S.th}>Tipo</th>
-                    <th style={S.th}>Estado</th>
-                    <th style={S.th}>Ação</th>
-                  </tr></thead>
-                  <tbody>
-                    {citiesLoading ? (
-                       <tr><td colSpan={4} style={{...S.td, textAlign: "center"}}>A carregar...</td></tr>
-                    ) : cities?.map((c: any) => (
-                      <tr key={c.id} style={{ opacity: c.isActive ? 1 : 0.5 }}>
-                        <td style={S.td}>{c.name}</td>
-                        <td style={S.td}><span style={S.badge(c.isOffice ? "green" : "yellow")}>{c.isOffice ? "Escritório" : "Concelho"}</span></td>
-                        <td style={S.td}><span style={S.badge(c.isActive ? "green" : "danger")}>{c.isActive ? "Ativa" : "Desativada"}</span></td>
-                        <td style={S.td}>
-                          <button style={{ ...(c.isActive ? S.btnDanger : S.btnSecondary), padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleCityStatus(c)}>
-                            {c.isActive ? "Ocultar" : "Mostrar"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-             </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={S.table}>
+                <thead><tr>
+                  <th style={S.th}>Localidade</th>
+                  <th style={S.th}>Tipo</th>
+                  <th style={S.th}>Estado</th>
+                  <th style={S.th}>Ação</th>
+                </tr></thead>
+                <tbody>
+                  {citiesLoading ? (
+                    <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>A carregar...</td></tr>
+                  ) : cities?.map((c: any) => (
+                    <tr key={c.id} style={{ opacity: c.isActive ? 1 : 0.5 }}>
+                      <td style={S.td}>{c.name}</td>
+                      <td style={S.td}><span style={S.badge(c.isOffice ? "green" : "yellow")}>{c.isOffice ? "Escritório" : "Concelho"}</span></td>
+                      <td style={S.td}><span style={S.badge(c.isActive ? "green" : "danger")}>{c.isActive ? "Ativa" : "Desativada"}</span></td>
+                      <td style={S.td}>
+                        <button style={{ ...(c.isActive ? S.btnDanger : S.btnSecondary), padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleCityStatus(c)}>
+                          {c.isActive ? "Ocultar" : "Mostrar"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
