@@ -235,6 +235,7 @@ router.post("/:id/join", async (req: AuthenticatedRequest, res: Response): Promi
 
     res.json({ message: "Juntou-se à viagem com sucesso" });
   } catch (error: any) {
+    console.error("DEBUG JOIN ERROR:", error.message);
     res.status(400).json({ error: error.message });
   }
 });

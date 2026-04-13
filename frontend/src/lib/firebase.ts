@@ -15,6 +15,11 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
+// Expor para o Cypress se estiver em ambiente de teste
+if (typeof window !== 'undefined' && (window as any).Cypress) {
+  (window as any).fbAuth = auth;
+}
+
 // messaging might throw instantly if browser doesn't support it (e.g. non-HTTPS/IP)
 let messagingInstance: any = null;
 try {
@@ -31,3 +36,4 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
 export const logout = () => signOut(auth);
+

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
-import { auth } from '../lib/firebase';
+//import { auth } from '../lib/firebase';
 import { useLocation } from 'wouter';
 import { S, BRAND } from '../lib/design';
 import { API_BASE_URL } from '../lib/constants';
@@ -124,9 +124,17 @@ function Header({ onNavigate, onToggleSidebar, isMobile, showActions = true, use
 
 
 export default function Dashboard() {
-  const { user, dbUser, logout } = useAuth();
+  const { user, dbUser, logout, getToken } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+
+  // Bridges invisíveis para o Cypress (Sincronização e Cache)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).Cypress) {
+      (window as any).queryClient = queryClient;
+      (window as any).__APP_READY__ = true;
+    }
+  }, [queryClient]);
 
   const [page, setPage] = useState('dashboard');
 
@@ -231,7 +239,7 @@ export default function Dashboard() {
   const { data: citiesData = [] } = useQuery({
     queryKey: ['cities'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/cities`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json();
     },
@@ -246,7 +254,7 @@ export default function Dashboard() {
   const { data: trips } = useQuery({
     queryKey: ['trips'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       if (!token) throw new Error("No token");
       return fetchTrips(token);
     },
@@ -255,7 +263,7 @@ export default function Dashboard() {
 
   const createTripMutation = useMutation({
     mutationFn: async (newTrip: any) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/trips`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -279,7 +287,7 @@ export default function Dashboard() {
 
   const joinTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/trips/${tripId}/join`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
@@ -298,7 +306,7 @@ export default function Dashboard() {
 
   const leaveTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/trips/${tripId}/leave`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
@@ -318,7 +326,7 @@ export default function Dashboard() {
 
   const cancelTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/trips/${tripId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
@@ -335,7 +343,7 @@ export default function Dashboard() {
 
   const createSpRequestMutation = useMutation({
     mutationFn: async (data: any) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/sp-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -361,7 +369,7 @@ export default function Dashboard() {
   const { data: spRequestsData = [] } = useQuery({
     queryKey: ['spRequests'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/sp-requests`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -374,7 +382,7 @@ export default function Dashboard() {
   const { data: matchesData } = useQuery({
     queryKey: ['matches'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/matches`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json().then((d: any) => d.matches || []);
     },
@@ -385,7 +393,7 @@ export default function Dashboard() {
   const { data: unreadChats } = useQuery({
     queryKey: ['unreadChats'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/messages/unread`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json();
     },
@@ -395,7 +403,7 @@ export default function Dashboard() {
 
   const markMatchesReadMutation = useMutation({
     mutationFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       return fetch(`${API_BASE_URL}/matches/mark-read`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
@@ -406,7 +414,7 @@ export default function Dashboard() {
 
   const markAllMessagesReadMutation = useMutation({
     mutationFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       return fetch(`${API_BASE_URL}/messages/read-all`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
@@ -419,10 +427,11 @@ export default function Dashboard() {
 
   // --- BLOCO UNIFICADO DE PREPARAÇÃO DE DADOS (Resolve ReferenceError) ---
   const now = new Date();
-  
+
   // 1. Contagens de Notificações
   const unreadMatchesCount = matchesData?.filter((m: any) => !m.isRead).length || 0;
-  const unreadMessagesCount = unreadChats?.unreadCount || 0;
+  // O valor absoluto vindo da API pode conter viagens passadas/canceladas, portanto é ignorado aqui.
+  // A const `unreadMessagesCount` será definida abaixo depois de filtrar myUpcomingTrips.
   const displayUnreadMatchesCount = activeTabMinhas === "matches" && page === "minhas" ? 0 : unreadMatchesCount;
 
   // 2. Filtragem de Viagens Relacionadas
@@ -446,11 +455,13 @@ export default function Dashboard() {
     .filter((t: any) => new Date(t.departureTime) >= now)
     .sort((a: any, b: any) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime());
   const myPastTrips = myTripsRaw
-    .filter((t: any) => new Date(t.departureTime) < now)
+    .filter((t: any) => new Date(t.departureTime) < now && t.status !== 'CANCELLED')
     .sort((a: any, b: any) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime());
 
   // 3. Contagens Categorizadas (Sub-abas)
-  const unreadUpcomingCount = myUpcomingTrips.filter((t: any) => (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
+  const unreadUpcomingCount = myUpcomingTrips.filter((t: any) => t.status !== 'CANCELLED' && (unreadChats?.unreadByTrip?.[t.id] || 0) > 0).length;
+  // Agora usamos a contagem visível de próximas para a sidebar
+  const unreadMessagesCount = unreadUpcomingCount;
 
   const completedCount = myPastTrips.filter((t: any) => {
     if (t.status === 'CANCELLED') return false;
@@ -745,7 +756,7 @@ export default function Dashboard() {
             </div>
 
             {unreadMessagesCount > 0 && (
-              <button 
+              <button
                 style={{ ...S.btnSecondary, fontSize: "12px", padding: "6px 12px", border: `1px solid ${BRAND.danger}`, color: BRAND.danger, background: "none" }}
                 onClick={() => {
                   if (window.confirm("Deseja marcar TODAS as mensagens como lidas? Isto limpará as notificações de todas as abas.")) {

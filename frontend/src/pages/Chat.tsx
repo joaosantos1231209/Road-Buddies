@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
-import { auth } from '../lib/firebase';
+//import { auth } from '../lib/firebase';
 import { useRoute, useLocation } from 'wouter';
 import { S, BRAND } from '../lib/design';
 import { API_BASE_URL } from '../lib/constants';
@@ -18,7 +18,7 @@ export const Chat = () => {
   const [match, params] = useRoute("/chat/:tripId");
   const [, setLocation] = useLocation();
   const tripId = params?.tripId;
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -26,7 +26,7 @@ export const Chat = () => {
   const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', tripId],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       if (!token || !tripId) throw new Error("No token or missing trip");
       return fetchMessages(tripId, token);
     },
@@ -37,7 +37,7 @@ export const Chat = () => {
   const { data: trips } = useQuery({
     queryKey: ['trips'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       if (!token) throw new Error("No token");
       const res = await fetch(`${API_BASE_URL}/trips`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json().then(d => d.trips);
@@ -48,7 +48,7 @@ export const Chat = () => {
   const { data: citiesData = [] } = useQuery({
     queryKey: ['cities'],
     queryFn: async () => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/cities`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json();
     },
@@ -59,7 +59,7 @@ export const Chat = () => {
     if (user && tripId) {
       const markRead = async () => {
         try {
-          const token = await auth.currentUser?.getIdToken();
+          const token = await getToken();
           if (!token) return;
           await fetch(`${API_BASE_URL}/messages/trip/${tripId}/read`, {
             method: 'POST',
@@ -84,7 +84,7 @@ export const Chat = () => {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (msgContent: string) => {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await getToken();
       const res = await fetch(`${API_BASE_URL}/messages/trip/${tripId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

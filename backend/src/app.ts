@@ -9,11 +9,13 @@ import citiesRoutes from "./routes/cities.js";
 import usersRoutes from "./routes/users.js";
 import spRequestsRoutes from "./routes/spRequests.js";
 import matchesRoutes from "./routes/matches.js";
+import debugRoutes from "./routes/debug.js";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/trips", tripRoutes);
@@ -22,6 +24,7 @@ app.use("/api/cities", citiesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/sp-requests", spRequestsRoutes);
 app.use("/api/matches", matchesRoutes);
+app.use("/api/debug", debugRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
