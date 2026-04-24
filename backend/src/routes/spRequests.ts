@@ -6,38 +6,37 @@ import { db } from "../db/index.js";
 import { spRequests, users, cities } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import sgMail from "@sendgrid/mail";
-import * as dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
+import { validateBody, createSpRequestSchema } from "../lib/validate.js";
+
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || "SG.mock.key");
+
+const SP_TO_EMAIL = process.env.SP_REQUEST_TO_EMAIL || "";
+const SP_FROM_EMAIL = process.env.SP_REQUEST_FROM_EMAIL || "";
 
 const router = Router();
 router.use(requireAuth);
 
-// Create a new SP request and send notification email
-router.post("/", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post("/", validateBody(createSpRequestSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { originId, destinationId, dateNeeded, justification } = req.body;
     const userId = req.user.uid;
 
-    if (!originId || !destinationId || !dateNeeded) {
-      res.status(400).json({ error: "Por favor, selecione a origem, o destino e a data pretendida." });
-      return;
-    }
-
-    if (originId.toString() === destinationId.toString()) {
+    if (originId && originId === destinationId) {
       res.status(400).json({ error: "A origem e o destino têm de ser diferentes." });
       return;
     }
 
-    // Fetch collaborator info
-    const collaborator = await db.query.users.findFirst({ where: eq(users.id, userId) });
-    const originCity = originId ? await db.query.cities.findFirst({ where: eq(cities.id, parseInt(originId)) }) : null;
-    const destCity = await db.query.cities.findFirst({ where: eq(cities.id, parseInt(destinationId)) });
+    const [collaborator, originCity, destCity] = await Promise.all([
+      db.query.users.findFirst({ where: eq(users.id, userId) }),
+      originId ? db.query.cities.findFirst({ where: eq(cities.id, originId) }) : Promise.resolve(null),
+      db.query.cities.findFirst({ where: eq(cities.id, destinationId) }),
+    ]);
 
     const [request] = await db.insert(spRequests).values({
       userId,
-      originId: originId ? parseInt(originId) : null,
-      destinationId: parseInt(destinationId),
+      originId: originId ?? null,
+      destinationId,
       dateNeeded: new Date(dateNeeded),
       justification,
     }).returning();
@@ -68,7 +67,7 @@ router.post("/", async (req: AuthenticatedRequest, res: Response): Promise<void>
           </table>
           <div style="background: #EBF2FA; border-left: 4px solid #2563A8; padding: 14px 16px; border-radius: 4px;">
             <p style="margin: 0; font-size: 14px; color: #1E3A5F;">
-              <strong>📧 Para dar seguimento a esta solicitação</strong>, responda diretamente ao colaborador pelo e-mail: 
+              <strong>📧 Para dar seguimento a esta solicitação</strong>, responda diretamente ao colaborador pelo e-mail:
               <a href="mailto:${collaboratorEmail}" style="color: #2563A8;">${collaboratorEmail}</a>
             </p>
           </div>
@@ -79,18 +78,16 @@ router.post("/", async (req: AuthenticatedRequest, res: Response): Promise<void>
       </div>
     `;
 
-    const msg = {
-      to: "jpgomessantos1@gmail.com",
-      from: "joaosantos@loba.com",
-      subject: `[Road Buddies] Solicitação de Viatura - ${collaboratorName}`,
-      html: emailHtml,
-    };
-
-    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== "SG.mock.key") {
-      await sgMail.send(msg);
+    if (SP_TO_EMAIL && SP_FROM_EMAIL && process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== "SG.mock.key") {
+      await sgMail.send({
+        to: SP_TO_EMAIL,
+        from: SP_FROM_EMAIL,
+        subject: `[Road Buddies] Solicitação de Viatura - ${collaboratorName}`,
+        html: emailHtml,
+      });
       console.log(`[Email] SP request sent for ${collaboratorName}`);
     } else {
-      console.log(`[Mock Email] SP request would be sent for ${collaboratorName} to jpgomessantos1@gmail.com`);
+      console.log(`[Mock Email] SP request for ${collaboratorName} to ${SP_TO_EMAIL || "(no email configured)"}`);
     }
 
     res.status(201).json({ request });
@@ -100,7 +97,6 @@ router.post("/", async (req: AuthenticatedRequest, res: Response): Promise<void>
   }
 });
 
-// Get all SP requests for the current user
 router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user.uid;

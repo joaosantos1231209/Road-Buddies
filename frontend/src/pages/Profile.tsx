@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-//import { auth } from '../lib/firebase';
 import { S, BRAND } from '../lib/design';
 import { formatLicensePlate, isValidLicensePlate } from '../lib/utils';
 import { API_BASE_URL } from '../lib/constants';
+import { useToast } from '../contexts/ToastContext';
 
 
 const fetchTrips = async (token: string) => {
@@ -18,6 +18,7 @@ const fetchTrips = async (token: string) => {
 export const Profile = () => {
   const { user, dbUser, updateDbUser, getToken } = useAuth();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   // Personal Info Edit State
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
@@ -106,6 +107,7 @@ export const Profile = () => {
       setIsEditingPersonal(false);
       setIsEditingVehicle(false);
       setProfileError('');
+      showToast('Perfil atualizado com sucesso!', 'success');
     },
     onError: (err: any) => {
       setProfileError(err.message || 'Erro ao guardar alterações.');

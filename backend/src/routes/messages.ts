@@ -1,11 +1,12 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import type { AuthenticatedRequest } from "../middleware/auth.js";
 import { db } from "../db/index.js";
 import { messages, trips, tripParticipants, chatReads, users } from "../db/schema.js";
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { eq, and, inArray, desc, gt } from "drizzle-orm";
 import { sendMessageNotification } from "../services/fcm.js";
+import { validateBody, parseIntParam, sendMessageSchema } from "../lib/validate.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -21,13 +22,15 @@ const verifyChatAccess = async (tripId: number, userId: string) => {
   return (isDriver || isPassenger) ? trip : null;
 };
 
-// BUSCAR CONTADOR DE NÃO LIDAS (Definitivo e inclusivo)
 router.get("/unread", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user.uid;
 
-    const myOwned = await db.query.trips.findMany({ where: eq(trips.userId, userId) });
-    const myJoined = await db.query.tripParticipants.findMany({ where: eq(tripParticipants.userId, userId) });
+    // Single query: get all trip IDs the user is involved in
+    const [myOwned, myJoined] = await Promise.all([
+      db.query.trips.findMany({ where: eq(trips.userId, userId), columns: { id: true } }),
+      db.query.tripParticipants.findMany({ where: eq(tripParticipants.userId, userId), columns: { tripId: true } }),
+    ]);
     const relatedTripIds = [...new Set([...myOwned.map(t => t.id), ...myJoined.map(p => p.tripId)])];
 
     if (relatedTripIds.length === 0) {
@@ -44,7 +47,10 @@ router.get("/unread", async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const recentMsgs = await db.query.messages.findMany({
-      where: inArray(messages.tripId, relatedTripIds)
+      where: and(
+        inArray(messages.tripId, relatedTripIds),
+      ),
+      columns: { tripId: true, senderId: true, createdAt: true },
     });
 
     const unreadMap: Record<number, number> = {};
@@ -54,8 +60,6 @@ router.get("/unread", async (req: AuthenticatedRequest, res: Response) => {
       if (m.senderId === userId) continue;
       const lastReadTime = readMap.get(m.tripId) || 0;
       const msgTime = new Date(m.createdAt).getTime();
-
-      // Fix Sniper: Comparação direta. Adicionamos 50ms de margem de segurança
       if (msgTime > lastReadTime + 50) {
         unreadMap[m.tripId] = (unreadMap[m.tripId] || 0) + 1;
         totalUnread++;
@@ -69,60 +73,46 @@ router.get("/unread", async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
-// MARCAR COMO LIDO (Sniper: Baseado na mensagem mais recente)
 router.post("/trip/:tripId/read", async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const tripId = parseInt(req.params.tripId as string);
+    const tripId = parseIntParam(req.params.tripId);
+    if (!tripId) return res.status(400).json({ error: "ID inválido" });
     const userId = req.user.uid;
 
     const trip = await verifyChatAccess(tripId, userId);
     if (!trip) return res.status(403).json({ error: "Forbidden" });
 
-    // Sniper: Buscar o tempo da mensagem MAIS RECENTE daquela viagem
     const lastMsg = await db.query.messages.findFirst({
       where: eq(messages.tripId, tripId),
-      orderBy: [desc(messages.createdAt)]
+      orderBy: [desc(messages.createdAt)],
+      columns: { createdAt: true },
     });
 
-    // Se houver mensagens, usamos o tempo dela. Se não, usamos o agora.
     const readTime = lastMsg ? new Date(lastMsg.createdAt) : new Date();
 
-    // Limpar duplicados e sincronizar o marcador
     await db.delete(chatReads).where(and(eq(chatReads.userId, userId), eq(chatReads.tripId, tripId)));
-    await db.insert(chatReads).values({
-      userId,
-      tripId,
-      lastReadAt: readTime
-    });
+    await db.insert(chatReads).values({ userId, tripId, lastReadAt: readTime });
 
     res.json({ success: true, ok: true });
   } catch (error) {
-    console.error("[READ] Sniper Error:", error);
+    console.error("[READ] Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// MARCAR TUDO COMO LIDO (Definitivo para todas as viagens)
 router.post("/read-all", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user.uid;
 
-    // 1. Buscar todas as viagens do utilizador
-    const myOwned = await db.query.trips.findMany({ where: eq(trips.userId, userId) });
-    const myJoined = await db.query.tripParticipants.findMany({ where: eq(tripParticipants.userId, userId) });
+    const [myOwned, myJoined] = await Promise.all([
+      db.query.trips.findMany({ where: eq(trips.userId, userId), columns: { id: true } }),
+      db.query.tripParticipants.findMany({ where: eq(tripParticipants.userId, userId), columns: { tripId: true } }),
+    ]);
     const relatedTripIds = [...new Set([...myOwned.map(t => t.id), ...myJoined.map(p => p.tripId)])];
 
     if (relatedTripIds.length > 0) {
-      // 2. Apagar marcadores antigos e inserir novos para todas as viagens de uma vez
       await db.delete(chatReads).where(and(eq(chatReads.userId, userId), inArray(chatReads.tripId, relatedTripIds)));
-      
-      const newMarkers = relatedTripIds.map(tripId => ({
-        userId,
-        tripId,
-        lastReadAt: new Date()
-      }));
-
-      await db.insert(chatReads).values(newMarkers);
+      await db.insert(chatReads).values(relatedTripIds.map(tripId => ({ userId, tripId, lastReadAt: new Date() })));
     }
 
     res.json({ success: true, ok: true });
@@ -134,7 +124,8 @@ router.post("/read-all", async (req: AuthenticatedRequest, res: Response) => {
 
 router.get("/trip/:tripId", async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const tripId = parseInt(req.params.tripId as string);
+    const tripId = parseIntParam(req.params.tripId);
+    if (!tripId) return res.status(400).json({ error: "ID inválido" });
     const userId = req.user.uid;
     const trip = await verifyChatAccess(tripId, userId);
     if (!trip) return res.status(403).json({ error: "Forbidden" });
@@ -147,36 +138,40 @@ router.get("/trip/:tripId", async (req: AuthenticatedRequest, res: Response) => 
   } catch (error) { res.status(500).json({ error: "Internal Server Error" }); }
 });
 
-router.post("/trip/:tripId", async (req: AuthenticatedRequest, res: Response) => {
+router.post("/trip/:tripId", validateBody(sendMessageSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const tripId = parseInt(req.params.tripId as string);
+    const tripId = parseIntParam(req.params.tripId);
+    if (!tripId) return res.status(400).json({ error: "ID inválido" });
     const senderId = req.user.uid;
     const { content } = req.body;
-    if (!content) return res.status(400).json({ error: "Missing content" });
     const trip = await verifyChatAccess(tripId, senderId);
     if (!trip) return res.status(403).json({ error: "Forbidden" });
+    if (trip.status === 'CANCELLED') return res.status(400).json({ error: "Não é possível enviar mensagens numa viagem cancelada." });
 
     const newMessage = await db.insert(messages).values({ tripId, senderId, content, isRead: false }).returning();
 
-    const notifyParticipants = async () => {
+    // Fire-and-forget FCM notifications
+    (async () => {
       try {
         const fullTrip = await db.query.trips.findFirst({
-           where: eq(trips.id, tripId),
-           with: { participants: true }
+          where: eq(trips.id, tripId),
+          with: { participants: { columns: { userId: true } } },
+          columns: { userId: true },
         });
         if (!fullTrip) return;
-        const allUserIds = [fullTrip.userId, ...fullTrip.participants.map(p => p.userId)];
-        const targetIds = [...new Set(allUserIds)].filter(id => id !== senderId);
-        if (targetIds.length > 0) {
-           const usersData = await db.query.users.findMany({ where: inArray(users.id, targetIds) });
-           const sender = await db.query.users.findFirst({ where: eq(users.id, senderId) });
-           for (const u of usersData) {
-              if (u.fcmToken) await sendMessageNotification(u.fcmToken, sender?.username || "Um colega", content, tripId.toString()).catch(() => {});
-           }
+        const targetIds = [...new Set([fullTrip.userId, ...fullTrip.participants.map(p => p.userId)])].filter(id => id !== senderId);
+        if (targetIds.length === 0) return;
+        const [usersData, sender] = await Promise.all([
+          db.query.users.findMany({ where: inArray(users.id, targetIds), columns: { fcmToken: true } }),
+          db.query.users.findFirst({ where: eq(users.id, senderId), columns: { username: true } }),
+        ]);
+        const senderName = sender?.username || "Um colega";
+        for (const u of usersData) {
+          if (u.fcmToken) await sendMessageNotification(u.fcmToken, senderName, content, tripId.toString()).catch(() => {});
         }
       } catch (err) { console.error("[FCM] Error:", err); }
-    };
-    notifyParticipants();
+    })();
+
     res.status(201).json({ message: newMessage[0] });
   } catch (error) { res.status(500).json({ error: "Internal Server Error" }); }
 });

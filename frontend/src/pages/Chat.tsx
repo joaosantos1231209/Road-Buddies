@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
-//import { auth } from '../lib/firebase';
 import { useRoute, useLocation } from 'wouter';
 import { S, BRAND } from '../lib/design';
 import { API_BASE_URL } from '../lib/constants';

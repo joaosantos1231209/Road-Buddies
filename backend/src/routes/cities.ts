@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
       .orderBy(desc(cities.isOffice), asc(cities.name));
     
     res.json(allCities);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Erro a buscar cidades:", error);
     res.status(500).json({ error: "Failed to fetch cities" });
   }
@@ -47,7 +47,7 @@ router.post("/", requireAdmin, async (req, res) => {
       .returning();
       
     res.json(city);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Erro a criar/atualizar cidade:", error);
     res.status(500).json({ error: "Failed to create or update city" });
   }

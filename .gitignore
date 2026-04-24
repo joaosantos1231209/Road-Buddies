@@ -1,3 +1,27 @@
 node_modules/
 */node_modules/
 .env
+*/.env
+
+# Build outputs
+dist/
+*/dist/
+dev-dist/
+*/dev-dist/
+out/
+*/out/
+
+# Logs e ficheiros de debug
+*.log
+*.txt
+debug.txt
+error.log
+out.log
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# OS
+.DS_Store
+Thumbs.db
