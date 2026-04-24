@@ -4,40 +4,43 @@ dotenv.config();
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || 'SG.mock.key');
 
+const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS || 'noreply@loba.com';
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0].trim();
+
+const maybeSend = async (msg: sgMail.MailDataRequired, logLabel: string) => {
+  try {
+    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.mock.key') {
+      await sgMail.send(msg);
+      console.log(`[Email] ${logLabel} sent to ${msg.to}`);
+    } else {
+      console.log(`[Mock Email] ${logLabel} → ${msg.to}`);
+    }
+  } catch (error) {
+    console.error(`[Email] Error sending ${logLabel}:`, error);
+  }
+};
+
 export const sendVerificationEmail = async (email: string, token: string) => {
-  const verifyLink = `http://localhost:5173/verify?token=${token}`;
-  
-  const msg = {
+  const verifyLink = `${FRONTEND_URL}/verify?token=${token}`;
+  await maybeSend({
     to: email,
-    from: 'joaosantos@loba.com',
+    from: FROM_EMAIL,
     subject: 'Road Buddies - Verifique a sua conta',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #0f172a;">Bem-vindo ao Road Buddies!</h2>
-        <p>Clique no botão abaixo para verificar a sua conta e desbloquear o acesso à plataforma da GLOBAZ:</p>
+        <p>Clique no botão abaixo para verificar a sua conta e desbloquear o acesso à plataforma da LOBA:</p>
         <a href="${verifyLink}" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Verificar Conta</a>
       </div>
     `,
-  };
-
-  try {
-    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.mock.key') {
-      await sgMail.send(msg);
-      console.log(`[Email] Verification sent to ${email}`);
-    } else {
-      console.log(`[Mock Email] Verification sent to ${email}. Link: ${verifyLink}`);
-    }
-  } catch (error) {
-    console.error("Error sending verification email:", error);
-  }
+  }, 'Verification');
 };
 
 export const sendMatchFoundEmail = async (targetEmail: string, tripId: number) => {
-  const matchLink = `http://localhost:5173/dashboard`;
-  
-  const msg = {
+  const matchLink = `${FRONTEND_URL}/dashboard`;
+  await maybeSend({
     to: targetEmail,
-    from: 'joaosantos@loba.com',
+    from: FROM_EMAIL,
     subject: 'Road Buddies - Novo Match Encontrado!',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
@@ -47,69 +50,37 @@ export const sendMatchFoundEmail = async (targetEmail: string, tripId: number) =
         <a href="${matchLink}" style="display: inline-block; padding: 12px 24px; background-color: #059669; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Ver Oferta no Dashboard</a>
       </div>
     `,
-  };
-
-  try {
-    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.mock.key') {
-      await sgMail.send(msg);
-      console.log(`[Email] Match Found sent to ${targetEmail}`);
-    } else {
-      console.log(`[Mock Email] Match Found sent to ${targetEmail}.`);
-    }
-  } catch (error) {
-    console.error("Error sending match email:", error);
-  }
+  }, 'Match Found');
 };
 
 export const sendPassengerJoinedEmail = async (driverEmail: string, passengerName: string, tripInfo: string) => {
-  const msg = {
+  await maybeSend({
     to: driverEmail,
-    from: 'joaosantos@loba.com',
+    from: FROM_EMAIL,
     subject: 'Road Buddies - Novo passageiro na sua viagem!',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #0f172a;">Alguém reservou lugar na sua viagem!</h2>
         <p><strong>${passengerName}</strong> acabou de se juntar à sua viagem: <strong>${tripInfo}</strong>.</p>
         <p>A partir de agora, podem trocar informações diretamente através do chat da viagem disponível na plataforma.</p>
-        <a href="http://localhost:5173/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Aceder à Plataforma</a>
+        <a href="${FRONTEND_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Aceder à Plataforma</a>
       </div>
     `,
-  };
-
-  try {
-    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.mock.key') {
-      await sgMail.send(msg);
-      console.log(`[Email] Passenger Joined sent to ${driverEmail}`);
-    } else {
-      console.log(`[Mock Email] Passenger Joined sent to ${driverEmail}.`);
-    }
-  } catch (error) {
-    console.error("Error sending passenger joined email:", error);
-  }
+  }, 'Passenger Joined');
 };
+
 export const sendTripCancelledEmail = async (passengerEmail: string, driverName: string, tripInfo: string) => {
-  const msg = {
+  await maybeSend({
     to: passengerEmail,
-    from: 'joaosantos@loba.com',
+    from: FROM_EMAIL,
     subject: 'Road Buddies - Viagem Cancelada',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #dc2626;">Aviso: Uma viagem foi cancelada</h2>
         <p>Lamentamos informar que o condutor <strong>${driverName}</strong> cancelou a viagem <strong>${tripInfo}</strong> na qual tinha reservado lugar.</p>
         <p>Se tinha um pedido de boleia associado, este voltará a estar ativo e visível no dashboard para outros condutores.</p>
-        <a href="http://localhost:5173/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Ver Dashboard</a>
+        <a href="${FRONTEND_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px;">Ver Dashboard</a>
       </div>
     `,
-  };
-
-  try {
-    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.mock.key') {
-      await sgMail.send(msg);
-      console.log(`[Email] Trip Cancelled sent to ${passengerEmail}`);
-    } else {
-      console.log(`[Mock Email] Trip Cancelled sent to ${passengerEmail}. Driver: ${driverName}, Trip: ${tripInfo}`);
-    }
-  } catch (error) {
-    console.error("Error sending trip cancelled email:", error);
-  }
+  }, 'Trip Cancelled');
 };

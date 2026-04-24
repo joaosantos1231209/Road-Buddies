@@ -9,10 +9,12 @@ import { S, BRAND } from "./lib/design"
 import { API_BASE_URL } from "./lib/constants"
 import { useFCM } from "./hooks/useFCM"
 
+const WHITELISTED_EMAILS = (import.meta.env.VITE_WHITELISTED_EMAILS || "")
+  .split(",").map((e: string) => e.trim().toLowerCase()).filter(Boolean);
+
 const isEmailAllowed = (email: string) => {
-  const isLoba = email.toLowerCase().endsWith("@loba.com");
-  const isWhitelisted = email.toLowerCase() === "jpgomessantos1@gmail.com";
-  return isLoba || isWhitelisted;
+  const lower = email.toLowerCase();
+  return lower.endsWith("@loba.com") || WHITELISTED_EMAILS.includes(lower);
 };
 
 function Home() {

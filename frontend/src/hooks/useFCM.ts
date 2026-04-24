@@ -42,7 +42,7 @@ export const useFCM = (user: any) => {
           if (payload.notification && 'Notification' in window) {
              new Notification(payload.notification.title || 'Road Buddies', {
                 body: payload.notification.body,
-                icon: '/pwa-192x192.png'
+                icon: '/pwa-icon-192.png'
              });
           }
         });
