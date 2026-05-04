@@ -17,7 +17,7 @@ erDiagram
         timestamp verification_expiry
         timestamp created_at
         timestamp updated_at
-    }
+	text fcm_token    }
 
     CITIES {
         int id PK
@@ -90,12 +90,12 @@ erDiagram
     USERS ||--o{ MESSAGES : "envia (1:N)"
     USERS ||--o{ SP_REQUESTS : "solicita viatura (1:N)"
     USERS ||--o{ CHAT_READS : "regista leitura (1:N)"
-    
+  
     TRIPS ||--o{ TRIP_PARTICIPANTS : "contém (1:N)"
     TRIPS ||--o{ MESSAGES : "contextualiza (1:N)"
     TRIPS ||--o{ MATCHES : "emparelha com (1:N)"
     TRIPS ||--o{ CHAT_READS : "controla leituras (1:N)"
-    
+  
     CITIES ||--o{ TRIPS : "origem / destino (1:N)"
     CITIES ||--o{ SP_REQUESTS : "origem / destino (1:N)"
 ```
