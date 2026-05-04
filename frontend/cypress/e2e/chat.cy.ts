@@ -82,11 +82,67 @@ describe('Comunicação (Chat)', () => {
 
     cy.contains('Minhas Viagens').click();
 
-    // Aguardar pela viagem aparecer
     cy.contains('Chat', { timeout: 15000 }).first().click();
     cy.wait('@getMessages');
 
-    // A mensagem do passageiro deve aparecer
     cy.contains('Olá, encontramo-nos às 9h?').should('be.visible');
+  });
+
+  it('deve enviar uma mensagem no chat', () => {
+    const messages = [
+      {
+        id: 1,
+        senderId: 456,
+        content: 'Olá!',
+        createdAt: new Date().toISOString(),
+        sender: { username: 'Passageiro Teste' }
+      }
+    ];
+
+    cy.intercept('GET', '**/api/messages/trip/303', { body: { messages } }).as('getMessages');
+    cy.intercept('POST', '**/api/messages/trip/303', {
+      statusCode: 201,
+      body: {
+        message: {
+          id: 3,
+          senderId: 123,
+          content: 'Até logo!',
+          createdAt: new Date().toISOString(),
+          sender: { username: 'João Santos' }
+        }
+      }
+    }).as('sendMessage');
+    cy.intercept('POST', '**/api/messages/trip/303/read', { statusCode: 200, body: {} }).as('markRead');
+    cy.intercept('GET', '**/api/trips', { body: { trips: [myTrip] } }).as('getTrips2');
+    cy.intercept('GET', '**/api/cities', { body: [
+      { id: 1, name: 'Lisboa', isOffice: true, isActive: true },
+      { id: 2, name: 'Porto', isOffice: true, isActive: true }
+    ]}).as('getCities2');
+
+    // Navegar diretamente para o chat da viagem (sem passar pelo dashboard)
+    cy.visit('/chat/303');
+
+    cy.wait('@getMessages');
+    cy.contains('Olá!').should('be.visible');
+
+    cy.get('input[placeholder="Escreva a sua mensagem..."]').type('Até logo!');
+    cy.contains('button', 'Enviar').click();
+
+    cy.wait('@sendMessage');
+  });
+
+  it('deve mostrar indicador de chat vazio quando não há mensagens', () => {
+    cy.intercept('GET', '**/api/messages/trip/303', { body: { messages: [] } }).as('getMessagesEmpty');
+    cy.intercept('POST', '**/api/messages/trip/303/read', { statusCode: 200, body: {} }).as('markRead');
+    cy.intercept('GET', '**/api/trips', { body: { trips: [myTrip] } }).as('getTrips2');
+    cy.intercept('GET', '**/api/cities', { body: [
+      { id: 1, name: 'Lisboa', isOffice: true, isActive: true },
+      { id: 2, name: 'Porto', isOffice: true, isActive: true }
+    ]}).as('getCities2');
+
+    cy.visit('/chat/303');
+    cy.wait('@getMessagesEmpty');
+
+    cy.contains('O chat está vazio').should('be.visible');
   });
 });
