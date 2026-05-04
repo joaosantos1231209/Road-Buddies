@@ -70,8 +70,91 @@ describe('Administração', () => {
 
     cy.contains('Administração').click();
 
-    // Aguardar pelo conteúdo do painel
     cy.contains('Aprovar Conta', { timeout: 15000 }).first().click();
     cy.wait('@verifyUser');
+  });
+
+  it('deve conseguir revogar acesso de um utilizador aprovado', () => {
+    cy.intercept('PUT', '**/api/users/1/verify', {
+      statusCode: 200,
+      body: { user: { ...mockUsers[0], isVerified: false } }
+    }).as('revokeUser');
+
+    cy.visit('/dashboard');
+    cy.waitForApp();
+
+    cy.contains('Administração').click();
+
+    cy.contains('Revogar Acesso', { timeout: 15000 }).first().click();
+    cy.wait('@revokeUser');
+  });
+
+  it('deve conseguir tornar um utilizador administrador', () => {
+    // A tabela ordena por nome: "User Dois" (id:2) vem antes de "User Um" (id:1)
+    cy.intercept('PUT', '**/api/users/2/admin', {
+      statusCode: 200,
+      body: { user: { ...mockUsers[1], isAdmin: true } }
+    }).as('promoteUser');
+
+    cy.visit('/dashboard');
+    cy.waitForApp();
+
+    cy.contains('Administração').click();
+
+    cy.contains('Tornar Admin', { timeout: 15000 }).first().click();
+    cy.wait('@promoteUser');
+  });
+
+  it('deve navegar para a aba de cidades e listar localidades', () => {
+    cy.intercept('GET', '**/api/cities', {
+      body: [
+        { id: 1, name: 'Lisboa', isOffice: true, isActive: true },
+        { id: 2, name: 'Aveiro', isOffice: false, isActive: true }
+      ]
+    }).as('getCities');
+
+    cy.visit('/dashboard');
+    cy.waitForApp();
+
+    cy.contains('Administração').click();
+
+    cy.contains('Escritórios e Cidades', { timeout: 15000 }).click();
+
+    cy.contains('Lisboa').should('be.visible');
+    cy.contains('Aveiro').should('be.visible');
+    cy.contains('Nova Localidade').should('be.visible');
+  });
+
+  it('deve conseguir adicionar uma nova cidade', () => {
+    cy.intercept('GET', '**/api/cities', { body: [] }).as('getCities');
+    cy.intercept('POST', '**/api/cities', {
+      statusCode: 201,
+      body: { id: 10, name: 'Braga', isOffice: false, isActive: true }
+    }).as('addCity');
+
+    cy.visit('/dashboard');
+    cy.waitForApp();
+
+    cy.contains('Administração').click();
+    cy.contains('Escritórios e Cidades', { timeout: 15000 }).click();
+
+    cy.contains('label', 'Nome da Localidade').next('input').type('Braga');
+    cy.contains('button', 'Adicionar Localidade').click();
+
+    cy.wait('@addCity');
+  });
+
+  it('deve conseguir pesquisar utilizadores por nome', () => {
+    cy.visit('/dashboard');
+    cy.waitForApp();
+
+    cy.contains('Administração').click();
+
+    cy.contains('User Um', { timeout: 15000 }).should('be.visible');
+
+    cy.get('input[placeholder="Pesquisar por nome ou e-mail..."]').type('User Dois');
+
+    cy.contains('User Um').should('not.exist');
+    cy.contains('User Dois').should('be.visible');
   });
 });
