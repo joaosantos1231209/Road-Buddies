@@ -5,14 +5,11 @@ import type { AuthenticatedRequest } from "../middleware/auth.js";
 import { db } from "../db/index.js";
 import { spRequests, users, cities } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import sgMail from "@sendgrid/mail";
 import "dotenv/config";
 import { validateBody, createSpRequestSchema } from "../lib/validate.js";
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY || "SG.mock.key");
+import { sendEmail } from "../lib/email.js";
 
 const SP_TO_EMAIL = process.env.SP_REQUEST_TO_EMAIL || "";
-const SP_FROM_EMAIL = process.env.SP_REQUEST_FROM_EMAIL || "";
 
 const router = Router();
 router.use(requireAuth);
@@ -78,16 +75,11 @@ router.post("/", validateBody(createSpRequestSchema), async (req: AuthenticatedR
       </div>
     `;
 
-    if (SP_TO_EMAIL && SP_FROM_EMAIL && process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== "SG.mock.key") {
-      await sgMail.send({
-        to: SP_TO_EMAIL,
-        from: SP_FROM_EMAIL,
-        subject: `[Road Buddies] Solicitação de Viatura - ${collaboratorName}`,
-        html: emailHtml,
-      });
+    if (SP_TO_EMAIL) {
+      await sendEmail(SP_TO_EMAIL, `[Road Buddies] Solicitação de Viatura - ${collaboratorName}`, emailHtml);
       console.log(`[Email] SP request sent for ${collaboratorName}`);
     } else {
-      console.log(`[Mock Email] SP request for ${collaboratorName} to ${SP_TO_EMAIL || "(no email configured)"}`);
+      console.log(`[Mock Email] SP request for ${collaboratorName} to (no email configured)`);
     }
 
     res.status(201).json({ request });
