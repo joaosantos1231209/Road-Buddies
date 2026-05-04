@@ -6,7 +6,7 @@ import { db } from "../db/index.js";
 import { trips, tripParticipants, matches, users, cities } from "../db/schema.js";
 import { eq, and, or, inArray, desc } from "drizzle-orm";
 import { runMatchmaking } from "../services/matchmaking.js";
-import { sendPassengerJoinedEmail, sendTripCancelledEmail } from "../services/email.js";
+import { sendPassengerJoinedEmail, sendTripCancelledEmail } from "../lib/email.js";
 import { sendPassengerJoinedNotification, sendTripCancelledNotification } from "../services/fcm.js";
 import { hasCreatorConflict, hasParticipantConflict } from "../services/trips.js";
 import { TripType, TripStatus, MatchStatus } from "../lib/constants.js";

@@ -1,7 +1,7 @@
 import { db } from "../db/index.js";
 import { trips, matches, users, cities } from "../db/schema.js";
 import { eq, and, gte } from "drizzle-orm";
-import { sendMatchFoundEmail } from "./email.js";
+import { sendMatchFoundEmail } from "../lib/email.js";
 import { sendMatchNotification } from "./fcm.js";
 import { TripType, TripStatus, MatchStatus } from "../lib/constants.js";
 
