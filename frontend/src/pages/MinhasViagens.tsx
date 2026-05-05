@@ -262,7 +262,7 @@ export function MinhasViagens() {
                 type={histFilterDateType}
                 placeholder="Data"
                 aria-label="Filtrar por dia"
-                style={{ ...S.input, fontSize: '12px', width: '140px', flexShrink: 0 }}
+                style={{ ...S.input, fontSize: '13px', width: '140px', flexShrink: 0 }}
                 value={histFilterDate}
                 onFocus={() => setHistFilterDateType('date')}
                 onBlur={() => { if (!histFilterDate) setHistFilterDateType('text'); }}
@@ -292,24 +292,24 @@ export function MinhasViagens() {
             {filteredHistory.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Nenhuma viagem encontrada com os filtros selecionados.</div>
             ) : (
-            <div style={{ ...S.card, padding: 0, overflowX: 'auto' }}>
-              <table style={S.table}>
-                <thead><tr><th style={S.th}>Data</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Estado</th><th style={S.th}>Ações</th></tr></thead>
-                <tbody>
-                  {paginatedHistory.map((t: any) => (
-                    <tr key={t.id}>
-                      <td style={S.td}>{new Date(t.departureTime).toLocaleDateString()}</td>
-                      <td style={S.td}>{getCityName(t.originId, citiesData)}</td>
-                      <td style={S.td}>{getCityName(t.destinationId, citiesData)}</td>
-                      <td style={S.td}><HistoryStatusBadge t={t} dbUserId={dbUser?.id} /></td>
-                      <td style={{ ...S.td, display: 'flex', gap: '6px' }}>
-                        <button style={{ ...S.btnReserve, padding: '4px 8px', fontSize: '11px' }} onClick={() => setSelectedHistoryTrip(t)}>Detalhes</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              <div style={{ ...S.card, padding: 0, overflowX: 'auto' }}>
+                <table style={S.table}>
+                  <thead><tr><th style={S.th}>Data</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Estado</th><th style={S.th}>Ações</th></tr></thead>
+                  <tbody>
+                    {paginatedHistory.map((t: any) => (
+                      <tr key={t.id}>
+                        <td style={S.td}>{new Date(t.departureTime).toLocaleDateString()}</td>
+                        <td style={S.td}>{getCityName(t.originId, citiesData)}</td>
+                        <td style={S.td}>{getCityName(t.destinationId, citiesData)}</td>
+                        <td style={S.td}><HistoryStatusBadge t={t} dbUserId={dbUser?.id} /></td>
+                        <td style={{ ...S.td, display: 'flex', gap: '6px' }}>
+                          <button style={{ ...S.btnReserve, padding: '4px 8px', fontSize: '11px' }} onClick={() => setSelectedHistoryTrip(t)}>Detalhes</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
             {totalPageHistory > 1 && (
               <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center', paddingBottom: '10px' }}>
@@ -342,22 +342,22 @@ export function MinhasViagens() {
             {filteredSp.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Nenhum pedido encontrado com os filtros selecionados.</div>
             ) : (
-            <div style={{ ...S.card, padding: 0, overflowX: 'auto' }}>
-              <table style={S.table}>
-                <thead><tr><th style={S.th}>Data do Pedido</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Data Necessária</th><th style={{ ...S.th, minWidth: '200px' }}>Justificação</th></tr></thead>
-                <tbody>
-                  {paginatedRequests.map((r: any) => (
-                    <tr key={r.id}>
-                      <td style={S.td}>{new Date(r.createdAt).toLocaleDateString('pt-PT')}</td>
-                      <td style={S.td}>{r.origin?.name || '—'}</td>
-                      <td style={S.td}>{r.destination?.name || '—'}</td>
-                      <td style={S.td}>{new Date(r.dateNeeded).toLocaleDateString('pt-PT')}</td>
-                      <td style={S.td}><div style={{ maxWidth: '300px', overflowX: 'auto', whiteSpace: 'nowrap' }}>{r.justification || '—'}</div></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              <div style={{ ...S.card, padding: 0, overflowX: 'auto' }}>
+                <table style={S.table}>
+                  <thead><tr><th style={S.th}>Data do Pedido</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Data Necessária</th><th style={{ ...S.th, minWidth: '200px' }}>Justificação</th></tr></thead>
+                  <tbody>
+                    {paginatedRequests.map((r: any) => (
+                      <tr key={r.id}>
+                        <td style={S.td}>{new Date(r.createdAt).toLocaleDateString('pt-PT')}</td>
+                        <td style={S.td}>{r.origin?.name || '—'}</td>
+                        <td style={S.td}>{r.destination?.name || '—'}</td>
+                        <td style={S.td}>{new Date(r.dateNeeded).toLocaleDateString('pt-PT')}</td>
+                        <td style={S.td}><div style={{ maxWidth: '300px', overflowX: 'auto', whiteSpace: 'nowrap' }}>{r.justification || '—'}</div></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
             {totalPageRequests > 1 && (
               <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center', paddingBottom: '10px' }}>

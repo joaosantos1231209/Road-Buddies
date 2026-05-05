@@ -29,7 +29,7 @@ graph TD
     G([Fim Silencioso: Não há Match])
     
     H[Match Validado com Sucesso!]
-    I[SendGrid: Envia E-mail de Notificação ao Passageiro]
+    I[E-mail de Notificação ao Passageiro com link para o Dashboard]
     J[UI: Mostra o match nas 'Minhas Viagens' do Passageiro]
 
     %% 3. FAZER AS LIGAÇÕES (Setas)

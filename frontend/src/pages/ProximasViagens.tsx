@@ -92,7 +92,7 @@ export function ProximasViagens() {
           {filterDestination && <button aria-label="Limpar filtro de destino" style={{ background: 'none', border: 'none', cursor: 'pointer', color: BRAND.textMuted, fontSize: '16px' }} onClick={() => { setFilterDestination(''); resetPagination(); }}>×</button>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <input aria-label="Filtrar por data" style={{ ...S.input, minWidth: '130px', fontSize: '13px' }} type={filterDateType} placeholder="Data" value={filterDate} onFocus={() => setFilterDateType('date')} onBlur={() => { if (!filterDate) setFilterDateType('text'); }} onChange={e => { setFilterDate(e.target.value); resetPagination(); }} />
+          <input aria-label="Filtrar por data" style={{ ...S.input, minWidth: '13px', fontSize: '13px' }} type={filterDateType} placeholder="Data" value={filterDate} onFocus={() => setFilterDateType('date')} onBlur={() => { if (!filterDate) setFilterDateType('text'); }} onChange={e => { setFilterDate(e.target.value); resetPagination(); }} />
           {filterDate && <button aria-label="Limpar filtro de data" style={{ background: 'none', border: 'none', cursor: 'pointer', color: BRAND.textMuted, fontSize: '16px' }} onClick={() => { setFilterDate(''); resetPagination(); }}>×</button>}
         </div>
         {(filterOrigin || filterDestination || filterDate) && (

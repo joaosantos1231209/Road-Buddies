@@ -11,13 +11,13 @@ Pode ser acionado em dois momentos diferentes:
 ## Filtros de Validação
 Para que duas viagens sejam consideradas um Match, têm de passar obrigatoriamente em 4 testes:
 1. **Compatibilidade de Status**: O sistema garante que opostos se atraem. Uma viagem só é validada se o match for entre um PROVIDER (condutor) e um NEEDRIDE (passageiro).
-2. **Sobreposição de Datas**: O sistema avalia o startDate e o endDate. Para viagens de um dia verifica se as datas coincidem. Para pedidos flexíveis, o sistema garante que a oferta do condutor calha dentro da janela de tempo do passageiro.
-3. **Coincidência de Rota**: O algoritmo cruza as cidades. A origem do pedido tem de estar na origem da oferta (e vice-versa), e o destino tem de coincidir com o Destino. O sistema garante que a direção da viagem é a mesma.
+2. **Coincidência de Data**: O sistema compara o `departureTime` das duas viagens. Para existir match, ambas têm de ocorrer no mesmo dia (comparação por data local, ignorando a hora).
+3. **Coincidência de Rota**: O algoritmo cruza as cidades. A origem do pedido tem de estar na origem da oferta (e vice-versa), e o destino tem de coincidir com o destino. O sistema garante que a direção da viagem é a mesma.
 4. **Disponibilidade de Lugares**: O sistema verifica ativamente se a viagem do condutor (PROVIDER) tem lugares disponíveis. Se o carro já estiver cheio, a viagem é ignorada.
 
 ## Resultado (Ação do Sistema)
 Quando o algoritmo valida as regras com sucesso na sua pesquisa, executa a ação principal:
-- **Notificação (SendGrid)**: Dispara um e-mail automático apenas para o passageiro (NEEDRIDE), informando-o de que foi encontrada uma boleia para o seu pedido. O e-mail informa o passageiro sobre a origem, destino, data da viagem, o número de opções compatíveis encontradas e inclui um link direto para a plataforma O condutor não é notificado nesta fase para evitar spam.
+- **Notificação por E-mail**: Dispara um e-mail automático apenas para o passageiro (NEEDRIDE), informando-o de que foi encontrada uma boleia compatível com o seu pedido e incluindo um link direto para o dashboard. O condutor não é notificado nesta fase para evitar spam.
 - **Aba 'Minhas Viagens'**: A viagem fica imediatamente disponível na secção 'Minhas Viagens' do passageiro para que este possa proceder à sua reserva manual.
 
 ## Fluxo de Matchmaking
