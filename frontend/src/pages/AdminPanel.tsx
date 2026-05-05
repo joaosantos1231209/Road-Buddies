@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { S, BRAND } from '../lib/design';
 import { API_BASE_URL } from '../lib/constants';
+import { formatLicensePlate, isValidLicensePlate } from '@/lib/utils';
 
 const fetchUsers = async (token: string) => {
   const res = await fetch(`${API_BASE_URL}/users`, { headers: { Authorization: `Bearer ${token}` } });
@@ -11,6 +12,11 @@ const fetchUsers = async (token: string) => {
 
 const fetchCities = async (token: string) => {
   const res = await fetch(`${API_BASE_URL}/cities`, { headers: { Authorization: `Bearer ${token}` } });
+  return res.json();
+};
+
+const fetchCompanyVehicles = async (token: string) => {
+  const res = await fetch(`${API_BASE_URL}/company-vehicles`, { headers: { Authorization: `Bearer ${token}` } });
   return res.json();
 };
 
@@ -37,6 +43,16 @@ export const AdminPanel = () => {
   const citiesPerPage = 20;
   const [citySearch, setCitySearch] = useState("");
 
+  // Vehicle states
+  const [vehicleBrand, setVehicleBrand] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [vehiclePlate, setVehiclePlate] = useState("");
+  const [vehicleOfficeId, setVehicleOfficeId] = useState("");
+  const [vehicleError, setVehicleError] = useState("");
+  const [vehiclePage, setVehiclePage] = useState(1);
+  const [vehicleOfficeFilter, setVehicleOfficeFilter] = useState("");
+  const vehiclesPerPage = 15;
+
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['admin_users'],
     queryFn: async () => {
@@ -54,6 +70,18 @@ export const AdminPanel = () => {
       return fetchCities(token);
     }
   });
+
+  const { data: companyVehicles, isLoading: vehiclesLoading } = useQuery({
+    queryKey: ['company_vehicles'],
+    queryFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error("No token");
+      return fetchCompanyVehicles(token);
+    },
+    enabled: tab === 'vehicles',
+  });
+
+  const offices = (cities || []).filter((c: any) => c.isOffice && c.isActive);
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, action, value }: { id: string, action: 'verify' | 'admin', value: boolean }) => {
@@ -109,6 +137,45 @@ export const AdminPanel = () => {
     }
   });
 
+  const addVehicleMutation = useMutation({
+    mutationFn: async (data: { brand: string; model: string; plate: string; officeId: number }) => {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/company-vehicles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao adicionar veículo');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setVehicleBrand('');
+      setVehicleModel('');
+      setVehiclePlate('');
+      setVehicleOfficeId('');
+      setVehicleError('');
+      queryClient.invalidateQueries({ queryKey: ['company_vehicles'] });
+    },
+    onError: (err: any) => setVehicleError(err.message),
+  });
+
+  const deleteVehicleMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/company-vehicles/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Erro ao remover veículo');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company_vehicles'] }),
+    onError: (err: any) => alert(err.message),
+  });
+
   const handleToggleVerification = (id: string, currentVerified: boolean) => {
     updateUserMutation.mutate({ id, action: 'verify', value: !currentVerified });
   };
@@ -128,13 +195,28 @@ export const AdminPanel = () => {
     saveCityMutation.mutate({ name: city.name, isOffice: city.isOffice, isActive: !city.isActive });
   }
 
+  const handleAddVehicle = (e: React.FormEvent) => {
+    e.preventDefault();
+    setVehicleError('');
+    if (!vehicleBrand.trim() || !vehicleModel.trim() || !vehiclePlate.trim() || !vehicleOfficeId) {
+      setVehicleError('Preencha todos os campos.');
+      return;
+    }
+    if (!isValidLicensePlate(vehiclePlate)) {
+      setVehicleError('Matrícula inválida. Use o formato XX-XX-XX.');
+      return;
+    }
+    addVehicleMutation.mutate({ brand: vehicleBrand.trim(), model: vehicleModel.trim(), plate: vehiclePlate, officeId: parseInt(vehicleOfficeId) });
+  };
+
   return (
     <>
       <p style={S.pageTitle}>Administração</p>
 
-      <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         <button style={S.tab(tab === "users")} onClick={() => setTab("users")}>Utilizadores e Permissões</button>
         <button style={S.tab(tab === "cidades")} onClick={() => setTab("cidades")}>Escritórios e Cidades</button>
+        <button style={S.tab(tab === "vehicles")} onClick={() => setTab("vehicles")}>Veículos da Empresa</button>
       </div>
 
       {tab === "users" && (
@@ -326,6 +408,117 @@ export const AdminPanel = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {tab === "vehicles" && (
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "280px 1fr", gap: "16px", alignItems: "start" }}>
+          <div style={S.card}>
+            <p style={{ margin: "0 0 14px", fontWeight: "600", fontSize: "14px" }}>Novo Veículo</p>
+            <form onSubmit={handleAddVehicle}>
+              <div style={S.formGroup}>
+                <label style={S.label}>Marca</label>
+                <input style={S.input} placeholder="Ex: Volkswagen" value={vehicleBrand} onChange={e => setVehicleBrand(e.target.value)} required />
+              </div>
+              <div style={S.formGroup}>
+                <label style={S.label}>Modelo</label>
+                <input style={S.input} placeholder="Ex: Passat" value={vehicleModel} onChange={e => setVehicleModel(e.target.value)} required />
+              </div>
+              <div style={S.formGroup}>
+                <label style={S.label}>Matrícula</label>
+                <input style={S.input} placeholder="Ex: AB-12-CD" value={vehiclePlate} onChange={e => setVehiclePlate(formatLicensePlate(e.target.value))} maxLength={8} required />
+              </div>
+              <div style={S.formGroup}>
+                <label style={S.label}>Escritório</label>
+                <select style={S.select} value={vehicleOfficeId} onChange={e => setVehicleOfficeId(e.target.value)} required>
+                  <option value="">Selecionar escritório...</option>
+                  {offices.map((o: any) => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" style={S.submitBtn} disabled={addVehicleMutation.isPending}>
+                {addVehicleMutation.isPending ? 'A adicionar...' : 'Adicionar Veículo'}
+              </button>
+              {vehicleError && <p style={{ color: BRAND.danger, fontSize: "12px", marginTop: "8px" }}>{vehicleError}</p>}
+            </form>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <select
+              style={{ ...S.input }}
+              value={vehicleOfficeFilter}
+              onChange={e => { setVehicleOfficeFilter(e.target.value); setVehiclePage(1); }}
+            >
+              <option value="">Todos os escritórios</option>
+              {offices.map((o: any) => (
+                <option key={o.id} value={String(o.id)}>{o.name}</option>
+              ))}
+            </select>
+          <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={S.table}>
+                <thead><tr>
+                  <th style={S.th}>Marca / Modelo</th>
+                  <th style={S.th}>Matrícula</th>
+                  <th style={S.th}>Escritório</th>
+                  <th style={S.th}>Ação</th>
+                </tr></thead>
+                <tbody>
+                  {vehiclesLoading ? (
+                    <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>A carregar...</td></tr>
+                  ) : (() => {
+                    const list = [...(companyVehicles || [])]
+                      .filter((v: any) => !vehicleOfficeFilter || String(v.officeId) === vehicleOfficeFilter)
+                      .sort((a: any, b: any) =>
+                        (a.office?.name || '').localeCompare(b.office?.name || '') || (a.brand || '').localeCompare(b.brand || '')
+                      );
+                    const totalPages = Math.ceil(list.length / vehiclesPerPage);
+                    const paginated = list.slice((vehiclePage - 1) * vehiclesPerPage, vehiclePage * vehiclesPerPage);
+
+                    if (paginated.length === 0) {
+                      return <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>Nenhum veículo registado.</td></tr>;
+                    }
+
+                    return (
+                      <>
+                        {paginated.map((v: any) => (
+                          <tr key={v.id}>
+                            <td style={S.td}>
+                              <p style={{ margin: 0, fontWeight: "500" }}>{v.brand} {v.model}</p>
+                            </td>
+                            <td style={S.td}>{v.plate}</td>
+                            <td style={S.td}>{v.office?.name || '—'}</td>
+                            <td style={S.td}>
+                              <button
+                                style={{ ...S.btnDanger, padding: "5px 10px", fontSize: "12px" }}
+                                onClick={() => { if (confirm(`Remover ${v.brand} ${v.model} (${v.plate})?`)) deleteVehicleMutation.mutate(v.id); }}
+                                disabled={deleteVehicleMutation.isPending}
+                              >
+                                Remover
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {totalPages > 1 && (
+                          <tr>
+                            <td colSpan={4} style={{ padding: "12px", borderTop: `1px solid ${BRAND.border}` }}>
+                              <div style={{ display: "flex", justifyContent: "center", gap: "10px", alignItems: "center" }}>
+                                <button disabled={vehiclePage === 1} onClick={() => setVehiclePage(p => p - 1)} style={{ ...S.btnSecondary, padding: "4px 12px", fontSize: "12px" }}>Anterior</button>
+                                <span style={{ fontSize: "12px", fontWeight: "600" }}>Página {vehiclePage} de {totalPages}</span>
+                                <button disabled={vehiclePage === totalPages} onClick={() => setVehiclePage(p => p + 1)} style={{ ...S.btnSecondary, padding: "4px 12px", fontSize: "12px" }}>Próxima</button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
         </div>
       )}
     </>

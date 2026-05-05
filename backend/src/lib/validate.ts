@@ -33,9 +33,18 @@ export const createTripSchema = z.object({
   originId: z.coerce.number().int().positive(),
   destinationId: z.coerce.number().int().positive(),
   departureTime: z.string().min(1, "Data obrigatória"),
+  returnTime: z.string().nullable().optional(),
   availableSeats: z.coerce.number().int().min(0).max(8).optional(),
   vehicleType: z.string().max(100).nullable().optional(),
   tripVehicleDetails: z.string().max(500).nullable().optional(),
+  companyVehicleId: z.coerce.number().int().positive().nullable().optional(),
+});
+
+export const createCompanyVehicleSchema = z.object({
+  brand: z.string().min(1, "Marca obrigatória").max(100),
+  model: z.string().min(1, "Modelo obrigatório").max(100),
+  plate: z.string().min(1, "Matrícula obrigatória").max(10),
+  officeId: z.coerce.number().int().positive("Escritório obrigatório"),
 });
 
 export const createSpRequestSchema = z.object({
