@@ -13,11 +13,11 @@ graph TD
     B{Quantos lugares disponíveis?}
     
     %% Caminho: Já não há lugares quando abre os detalhes da viagem
-    I[Mostra label 'ESGOTADO' e botão 'Juntar-se' não aparece]
+    I[Mostra label 'ESGOTADO' e botão 'Reservar' não aparece]
     
     %% Caminho: Há lugares quando abre os detalhes da viagem
-    J[Mostra botão 'Juntar-se' e Número de vagas]
-    K([Passageiro clica em 'Juntar-se'])
+    J[Mostra botão 'Reservar' e Número de vagas]
+    K([Passageiro clica em 'Reservar'])
     
     C[Sistema: Reserva confirmada]
     D[Sistema: Subtrai 1 ao total de lugares livres na viagem]
@@ -25,7 +25,7 @@ graph TD
     
     F[Atualiza Número de vagas na Viagem]
     G[Mostra label 'ESGOTADO']
-    H[Oculta botão 'Juntar-se']
+    H[Oculta botão 'Reservar']
 
     %% 3. LIGAÇÕES
     A --> B
