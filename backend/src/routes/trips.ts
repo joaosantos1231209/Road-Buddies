@@ -3,8 +3,8 @@ import type { Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import type { AuthenticatedRequest } from "../middleware/auth.js";
 import { db } from "../db/index.js";
-import { trips, tripParticipants, matches, users, cities } from "../db/schema.js";
-import { eq, and, or, inArray, desc } from "drizzle-orm";
+import { trips, tripParticipants, matches, users, cities, companyVehicles } from "../db/schema.js";
+import { eq, and, or, inArray, desc, sql } from "drizzle-orm";
 import { runMatchmaking } from "../services/matchmaking.js";
 import { sendPassengerJoinedEmail, sendTripCancelledEmail } from "../lib/email.js";
 import { sendPassengerJoinedNotification, sendTripCancelledNotification } from "../services/fcm.js";
@@ -18,7 +18,7 @@ router.use(requireAuth);
 
 router.post("/", validateBody(createTripSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { type, originId, destinationId, departureTime, availableSeats, vehicleType, tripVehicleDetails } = req.body;
+    const { type, originId, destinationId, departureTime, returnTime, availableSeats, vehicleType, tripVehicleDetails, companyVehicleId } = req.body;
     const userId = req.user.uid;
 
     if (!originId || !destinationId || !departureTime) {
@@ -43,15 +43,61 @@ router.post("/", validateBody(createTripSchema), async (req: AuthenticatedReques
       return;
     }
 
+    let resolvedVehicleDetails = tripVehicleDetails ?? null;
+    let returnDate: Date | null = null;
+
+    if (type === TripType.PROVIDER && companyVehicleId) {
+      if (!returnTime) {
+        res.status(400).json({ error: "A data de retorno é obrigatória quando se usa viatura da empresa." });
+        return;
+      }
+
+      returnDate = new Date(returnTime);
+      if (isNaN(returnDate.getTime()) || returnDate < departureDate) {
+        res.status(400).json({ error: "A data de retorno tem de ser igual ou posterior à data de partida." });
+        return;
+      }
+
+      const vehicle = await db.query.companyVehicles.findFirst({
+        where: and(eq(companyVehicles.id, companyVehicleId), eq(companyVehicles.isActive, true)),
+      });
+
+      if (!vehicle) {
+        res.status(400).json({ error: "Veículo da empresa não encontrado ou inativo." });
+        return;
+      }
+
+      const rangeStart = new Date(departureDate); rangeStart.setHours(0, 0, 0, 0);
+      const rangeEnd = new Date(returnDate); rangeEnd.setHours(23, 59, 59, 999);
+
+      const vehicleConflict = await db.query.trips.findFirst({
+        where: and(
+          eq(trips.companyVehicleId, companyVehicleId),
+          inArray(trips.status, [TripStatus.ACTIVE, TripStatus.MATCHED]),
+          sql`${trips.departureTime} <= ${rangeEnd} AND ${trips.returnTime} >= ${rangeStart}`,
+        ),
+        columns: { id: true },
+      });
+
+      if (vehicleConflict) {
+        res.status(400).json({ error: "Este veículo já está ocupado nesse período." });
+        return;
+      }
+
+      resolvedVehicleDetails = JSON.stringify({ brand: `${vehicle.brand} ${vehicle.model}`, plate: vehicle.plate });
+    }
+
     const newTrip = await db.insert(trips).values({
       userId,
       type,
       originId,
       destinationId,
       departureTime: departureDate,
+      returnTime: returnDate,
       availableSeats: type === TripType.PROVIDER ? availableSeats : 0,
       vehicleType,
-      tripVehicleDetails,
+      tripVehicleDetails: resolvedVehicleDetails,
+      companyVehicleId: (type === TripType.PROVIDER && companyVehicleId) ? companyVehicleId : null,
       status: TripStatus.ACTIVE,
     }).returning();
 

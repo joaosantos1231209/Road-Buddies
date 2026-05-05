@@ -24,6 +24,16 @@ export const cities = pgTable('cities', {
   isOffice: boolean('is_office').default(false).notNull(),
 });
 
+export const companyVehicles = pgTable('company_vehicles', {
+  id: serial('id').primaryKey(),
+  brand: varchar('brand', { length: 100 }).notNull(),
+  model: varchar('model', { length: 100 }).notNull(),
+  plate: varchar('plate', { length: 10 }).notNull().unique(),
+  officeId: integer('office_id').notNull().references(() => cities.id),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const trips = pgTable('trips', {
   id: serial('id').primaryKey(),
   userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id),
@@ -31,9 +41,11 @@ export const trips = pgTable('trips', {
   originId: integer('origin_id').notNull().references(() => cities.id),
   destinationId: integer('destination_id').notNull().references(() => cities.id),
   departureTime: timestamp('departure_time', { withTimezone: true }).notNull(),
+  returnTime: timestamp('return_time', { withTimezone: true }),
   availableSeats: integer('available_seats').notNull().default(0),
   vehicleType: text('vehicle_type'),
   tripVehicleDetails: text('trip_vehicle_details'),
+  companyVehicleId: integer('company_vehicle_id').references(() => companyVehicles.id),
   hidden: boolean('hidden').notNull().default(false),
   status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -110,11 +122,23 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   }),
 }));
 
+export const companyVehiclesRelations = relations(companyVehicles, ({ one, many }) => ({
+  office: one(cities, {
+    fields: [companyVehicles.officeId],
+    references: [cities.id],
+  }),
+  trips: many(trips),
+}));
+
 export const tripsRelations = relations(trips, ({ one, many }) => ({
   participants: many(tripParticipants),
   creator: one(users, {
     fields: [trips.userId],
     references: [users.id],
+  }),
+  companyVehicle: one(companyVehicles, {
+    fields: [trips.companyVehicleId],
+    references: [companyVehicles.id],
   }),
   matchesAsProvider: many(matches, { relationName: 'matchProviderTrip' }),
   matchesAsSeeker: many(matches, { relationName: 'matchSeekerTrip' }),
