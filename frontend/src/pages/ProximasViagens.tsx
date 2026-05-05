@@ -24,6 +24,7 @@ export function ProximasViagens() {
   const [filterDate, setFilterDate] = useState('');
   const [pageOffers, setPageOffers] = useState(1);
   const [pageRequests, setPageRequests] = useState(1);
+  const [filterDateType, setFilterDateType] = useState('text');
   const [confirm, setConfirm] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const now = new Date();
@@ -77,7 +78,7 @@ export function ProximasViagens() {
       </div>
 
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', background: BRAND.bg, padding: '12px', borderRadius: '10px', alignItems: 'center' }}>
-        <span style={{ fontSize: '12px', fontWeight: '600', color: BRAND.textMuted, whiteSpace: 'nowrap' }}>Filtrar por:</span>
+        <span style={{ fontSize: '12px', fontWeight: '600', color: BRAND.textMuted, whiteSpace: 'nowrap' }}>Filtrar:</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <div style={{ minWidth: '160px' }}>
             <CitySelector value={filterOrigin} onChange={(v) => { setFilterOrigin(v); resetPagination(); }} citiesData={citiesData} placeholder="Origem" />
@@ -91,7 +92,7 @@ export function ProximasViagens() {
           {filterDestination && <button aria-label="Limpar filtro de destino" style={{ background: 'none', border: 'none', cursor: 'pointer', color: BRAND.textMuted, fontSize: '16px' }} onClick={() => { setFilterDestination(''); resetPagination(); }}>×</button>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <input aria-label="Filtrar por data" style={{ ...S.input, minWidth: '130px', fontSize: '13px' }} type="date" value={filterDate} onChange={e => { setFilterDate(e.target.value); resetPagination(); }} />
+          <input aria-label="Filtrar por data" style={{ ...S.input, minWidth: '130px', fontSize: '13px' }} type={filterDateType} placeholder="Data" value={filterDate} onFocus={() => setFilterDateType('date')} onBlur={() => { if (!filterDate) setFilterDateType('text'); }} onChange={e => { setFilterDate(e.target.value); resetPagination(); }} />
           {filterDate && <button aria-label="Limpar filtro de data" style={{ background: 'none', border: 'none', cursor: 'pointer', color: BRAND.textMuted, fontSize: '16px' }} onClick={() => { setFilterDate(''); resetPagination(); }}>×</button>}
         </div>
         {(filterOrigin || filterDestination || filterDate) && (

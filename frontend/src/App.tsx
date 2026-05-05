@@ -251,7 +251,8 @@ function PendingVerification() {
         </div>
         <p style={{ margin: "0 0 6px", fontSize: "20px", fontWeight: "700", color: BRAND.text }}>Verifica o teu e-mail</p>
         <p style={{ margin: "0 0 4px", fontSize: "13px", fontWeight: "600", color: BRAND.primaryLight }}>{user?.email}</p>
-        <p style={{ margin: "0 0 24px", fontSize: "13px", color: BRAND.textMuted, lineHeight: 1.6 }}>Enviamos um código de 6 dígitos para o teu e-mail. Insere-o abaixo para ativar a tua conta.</p>
+        <p style={{ margin: "0 0 8px", fontSize: "13px", color: BRAND.textMuted, lineHeight: 1.6 }}>Enviamos um código de 6 dígitos para o teu e-mail. Insere-o abaixo para ativar a tua conta.</p>
+        <p style={{ margin: "0 0 24px", fontSize: "12px", color: BRAND.textMuted, lineHeight: 1.5 }}>Não encontras o e-mail? Verifica a pasta de <strong>SPAM</strong> ou lixo.</p>
         <form onSubmit={handleVerify}>
           <input
             style={{ ...S.input, textAlign: "center", fontSize: "24px", fontWeight: "700", letterSpacing: "8px", marginBottom: "12px" }}

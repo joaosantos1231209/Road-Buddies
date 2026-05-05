@@ -39,11 +39,13 @@ export function MinhasViagens() {
   const [upFilterOrigin, setUpFilterOrigin] = useState('');
   const [upFilterDest, setUpFilterDest] = useState('');
   const [upFilterDate, setUpFilterDate] = useState('');
+  const [upFilterDateType, setUpFilterDateType] = useState('text');
   const [pageHistory, setPageHistory] = useState(1);
   const [pageRequests, setPageRequests] = useState(1);
   const [selectedHistoryTrip, setSelectedHistoryTrip] = useState<any>(null);
   // Filtros histórico viagens
   const [histFilterDate, setHistFilterDate] = useState('');
+  const [histFilterDateType, setHistFilterDateType] = useState('text');
   const [histFilterOrigin, setHistFilterOrigin] = useState('');
   const [histFilterDest, setHistFilterDest] = useState('');
   const [histFilterStatus, setHistFilterStatus] = useState('');
@@ -162,10 +164,13 @@ export function MinhasViagens() {
               <CitySelector value={upFilterDest} onChange={v => { setUpFilterDest(v); setPageUpcoming(1); }} citiesData={citiesData} placeholder="Destino" />
             </div>
             <input
-              type="date"
+              type={upFilterDateType}
+              placeholder="Data"
               aria-label="Filtrar por data"
               style={{ ...S.input, fontSize: '12px', width: '140px', flexShrink: 0 }}
               value={upFilterDate}
+              onFocus={() => setUpFilterDateType('date')}
+              onBlur={() => { if (!upFilterDate) setUpFilterDateType('text'); }}
               onChange={e => { setUpFilterDate(e.target.value); setPageUpcoming(1); }}
             />
             {(upFilterOrigin || upFilterDest || upFilterDate) && (
@@ -254,10 +259,13 @@ export function MinhasViagens() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', background: BRAND.bg, padding: '10px', borderRadius: '8px', alignItems: 'center' }}>
               <span style={{ fontSize: '12px', fontWeight: '600', color: BRAND.textMuted, whiteSpace: 'nowrap' }}>Filtrar:</span>
               <input
-                type="date"
+                type={histFilterDateType}
+                placeholder="Data"
                 aria-label="Filtrar por dia"
                 style={{ ...S.input, fontSize: '12px', width: '140px', flexShrink: 0 }}
                 value={histFilterDate}
+                onFocus={() => setHistFilterDateType('date')}
+                onBlur={() => { if (!histFilterDate) setHistFilterDateType('text'); }}
                 onChange={e => { setHistFilterDate(e.target.value); setPageHistory(1); }}
               />
               <div style={{ flexShrink: 0 }}>
