@@ -16,7 +16,7 @@ const fetchCities = async (token: string) => {
 };
 
 const fetchCompanyVehicles = async (token: string) => {
-  const res = await fetch(`${API_BASE_URL}/company-vehicles`, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch(`${API_BASE_URL}/company-vehicles?all=true`, { headers: { Authorization: `Bearer ${token}` } });
   return res.json();
 };
 
@@ -170,6 +170,20 @@ export const AdminPanel = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Erro ao remover veículo');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company_vehicles'] }),
+    onError: (err: any) => alert(err.message),
+  });
+
+  const restoreVehicleMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/company-vehicles/${id}/restore`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Erro ao reativar veículo');
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company_vehicles'] }),
@@ -462,47 +476,62 @@ export const AdminPanel = () => {
                   <th style={S.th}>Marca / Modelo</th>
                   <th style={S.th}>Matrícula</th>
                   <th style={S.th}>Escritório</th>
+                  <th style={S.th}>Estado</th>
                   <th style={S.th}>Ação</th>
                 </tr></thead>
                 <tbody>
                   {vehiclesLoading ? (
-                    <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>A carregar...</td></tr>
+                    <tr><td colSpan={5} style={{ ...S.td, textAlign: "center" }}>A carregar...</td></tr>
                   ) : (() => {
                     const list = [...(companyVehicles || [])]
                       .filter((v: any) => !vehicleOfficeFilter || String(v.officeId) === vehicleOfficeFilter)
-                      .sort((a: any, b: any) =>
-                        (a.office?.name || '').localeCompare(b.office?.name || '') || (a.brand || '').localeCompare(b.brand || '')
-                      );
+                      .sort((a: any, b: any) => {
+                        if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+                        return (a.office?.name || '').localeCompare(b.office?.name || '') || (a.brand || '').localeCompare(b.brand || '');
+                      });
                     const totalPages = Math.ceil(list.length / vehiclesPerPage);
                     const paginated = list.slice((vehiclePage - 1) * vehiclesPerPage, vehiclePage * vehiclesPerPage);
 
                     if (paginated.length === 0) {
-                      return <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>Nenhum veículo registado.</td></tr>;
+                      return <tr><td colSpan={5} style={{ ...S.td, textAlign: "center" }}>Nenhum veículo registado.</td></tr>;
                     }
 
                     return (
                       <>
                         {paginated.map((v: any) => (
-                          <tr key={v.id}>
+                          <tr key={v.id} style={{ opacity: v.isActive ? 1 : 0.55 }}>
                             <td style={S.td}>
                               <p style={{ margin: 0, fontWeight: "500" }}>{v.brand} {v.model}</p>
                             </td>
                             <td style={S.td}>{v.plate}</td>
                             <td style={S.td}>{v.office?.name || '—'}</td>
                             <td style={S.td}>
-                              <button
-                                style={{ ...S.btnDanger, padding: "5px 10px", fontSize: "12px" }}
-                                onClick={() => { if (confirm(`Remover ${v.brand} ${v.model} (${v.plate})?`)) deleteVehicleMutation.mutate(v.id); }}
-                                disabled={deleteVehicleMutation.isPending}
-                              >
-                                Remover
-                              </button>
+                              <span style={S.badge(v.isActive ? "green" : "danger")}>{v.isActive ? "Ativo" : "Removido"}</span>
+                            </td>
+                            <td style={S.td}>
+                              {v.isActive ? (
+                                <button
+                                  style={{ ...S.btnDanger, padding: "5px 10px", fontSize: "12px" }}
+                                  onClick={() => { if (confirm(`Remover ${v.brand} ${v.model} (${v.plate})?`)) deleteVehicleMutation.mutate(v.id); }}
+                                  disabled={deleteVehicleMutation.isPending}
+                                >
+                                  Remover
+                                </button>
+                              ) : (
+                                <button
+                                  style={{ ...S.btnReserve, padding: "5px 10px", fontSize: "12px" }}
+                                  onClick={() => restoreVehicleMutation.mutate(v.id)}
+                                  disabled={restoreVehicleMutation.isPending}
+                                >
+                                  Reativar
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}
                         {totalPages > 1 && (
                           <tr>
-                            <td colSpan={4} style={{ padding: "12px", borderTop: `1px solid ${BRAND.border}` }}>
+                            <td colSpan={5} style={{ padding: "12px", borderTop: `1px solid ${BRAND.border}` }}>
                               <div style={{ display: "flex", justifyContent: "center", gap: "10px", alignItems: "center" }}>
                                 <button disabled={vehiclePage === 1} onClick={() => setVehiclePage(p => p - 1)} style={{ ...S.btnSecondary, padding: "4px 12px", fontSize: "12px" }}>Anterior</button>
                                 <span style={{ fontSize: "12px", fontWeight: "600" }}>Página {vehiclePage} de {totalPages}</span>

@@ -3,7 +3,7 @@ import type { Response } from "express";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import type { AuthenticatedRequest } from "../middleware/auth.js";
 import { db } from "../db/index.js";
-import { companyVehicles, trips, cities } from "../db/schema.js";
+import { companyVehicles, trips, cities, users } from "../db/schema.js";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { validateBody, parseIntParam, createCompanyVehicleSchema, errorMessage } from "../lib/validate.js";
 import { isValidLicensePlate } from "../lib/utils.js";
@@ -18,8 +18,14 @@ router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> 
     const fromParam = req.query.from as string | undefined;
     const toParam = req.query.to as string | undefined;
 
+    let includeAll = false;
+    if (req.query.all === "true") {
+      const [dbUser] = await db.select({ isAdmin: users.isAdmin }).from(users).where(eq(users.id, req.user.uid)).limit(1);
+      includeAll = dbUser?.isAdmin === true;
+    }
+
     const vehicles = await db.query.companyVehicles.findMany({
-      where: eq(companyVehicles.isActive, true),
+      where: includeAll ? undefined : eq(companyVehicles.isActive, true),
       with: { office: true },
       orderBy: companyVehicles.id,
     });
@@ -110,6 +116,23 @@ router.delete("/:id", requireAdmin, async (req: AuthenticatedRequest, res: Respo
     res.json({ message: "Veículo removido com sucesso" });
   } catch (error) {
     console.error("Error deleting company vehicle:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/:id/restore", requireAdmin, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const vehicleId = parseIntParam(req.params.id);
+    if (!vehicleId) { res.status(400).json({ error: "ID de veículo inválido" }); return; }
+
+    const existing = await db.query.companyVehicles.findFirst({ where: eq(companyVehicles.id, vehicleId) });
+    if (!existing) { res.status(404).json({ error: "Veículo não encontrado" }); return; }
+    if (existing.isActive) { res.status(400).json({ error: "Veículo já está ativo" }); return; }
+
+    await db.update(companyVehicles).set({ isActive: true }).where(eq(companyVehicles.id, vehicleId));
+    res.json({ message: "Veículo reativado com sucesso" });
+  } catch (error) {
+    console.error("Error restoring company vehicle:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
