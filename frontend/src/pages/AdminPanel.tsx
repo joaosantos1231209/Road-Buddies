@@ -30,8 +30,12 @@ export const AdminPanel = () => {
 
   // User list states
   const [userSearch, setUserSearch] = useState("");
+  const [userPrivFilter, setUserPrivFilter] = useState("");
   const [userPage, setUserPage] = useState(1);
-  const usersPerPage = 20;
+  const usersPerPage = 10;
+  const [cityPage, setCityPage] = useState(1);
+  const citiesPerPage = 20;
+  const [citySearch, setCitySearch] = useState("");
 
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['admin_users'],
@@ -135,13 +139,22 @@ export const AdminPanel = () => {
 
       {tab === "users" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "nowrap", overflowX: "auto" }}>
             <input
               style={{ ...S.input, maxWidth: "300px" }}
               placeholder="Pesquisar por nome ou e-mail..."
               value={userSearch}
               onChange={e => { setUserSearch(e.target.value); setUserPage(1); }}
             />
+            <select
+              style={{ ...S.input, width: "180px", flexShrink: 0 }}
+              value={userPrivFilter}
+              onChange={e => { setUserPrivFilter(e.target.value); setUserPage(1); }}
+            >
+              <option value="">Todos os privilégios</option>
+              <option value="admin">Administrador</option>
+              <option value="colaborador">Colaborador</option>
+            </select>
           </div>
           <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
             <div style={{ overflowX: "auto" }}>
@@ -157,10 +170,11 @@ export const AdminPanel = () => {
                     <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>A carregar...</td></tr>
                   ) : (() => {
                     const filtered = (users || [])
-                      .filter((u: any) =>
-                        (u.username || "").toLowerCase().includes(userSearch.toLowerCase()) ||
-                        (u.email || "").toLowerCase().includes(userSearch.toLowerCase())
-                      )
+                      .filter((u: any) => {
+                        const matchesSearch = (u.username || "").toLowerCase().includes(userSearch.toLowerCase()) || (u.email || "").toLowerCase().includes(userSearch.toLowerCase());
+                        const matchesPriv = !userPrivFilter || (userPrivFilter === "admin" ? u.isAdmin : !u.isAdmin);
+                        return matchesSearch && matchesPriv;
+                      })
                       .sort((a: any, b: any) => (a.username || "").localeCompare(b.username || ""));
 
                     const totalPages = Math.ceil(filtered.length / usersPerPage);
@@ -251,32 +265,65 @@ export const AdminPanel = () => {
             </form>
           </div>
 
-          <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={S.table}>
-                <thead><tr>
-                  <th style={S.th}>Localidade</th>
-                  <th style={S.th}>Tipo</th>
-                  <th style={S.th}>Estado</th>
-                  <th style={S.th}>Ação</th>
-                </tr></thead>
-                <tbody>
-                  {citiesLoading ? (
-                    <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>A carregar...</td></tr>
-                  ) : cities?.map((c: any) => (
-                    <tr key={c.id} style={{ opacity: c.isActive ? 1 : 0.5 }}>
-                      <td style={S.td}>{c.name}</td>
-                      <td style={S.td}><span style={S.badge(c.isOffice ? "green" : "yellow")}>{c.isOffice ? "Escritório" : "Concelho"}</span></td>
-                      <td style={S.td}><span style={S.badge(c.isActive ? "green" : "danger")}>{c.isActive ? "Ativa" : "Desativada"}</span></td>
-                      <td style={S.td}>
-                        <button style={{ ...(c.isActive ? S.btnDanger : S.btnSecondary), padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleCityStatus(c)}>
-                          {c.isActive ? "Ocultar" : "Mostrar"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <input
+              style={{ ...S.input }}
+              placeholder="Pesquisar localidade..."
+              value={citySearch}
+              onChange={e => { setCitySearch(e.target.value); setCityPage(1); }}
+            />
+            <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={S.table}>
+                  <thead><tr>
+                    <th style={S.th}>Localidade</th>
+                    <th style={S.th}>Tipo</th>
+                    <th style={S.th}>Estado</th>
+                    <th style={S.th}>Ação</th>
+                  </tr></thead>
+                  <tbody>
+                    {citiesLoading ? (
+                      <tr><td colSpan={4} style={{ ...S.td, textAlign: "center" }}>A carregar...</td></tr>
+                    ) : (() => {
+                      const sortedCities = [...(cities || [])]
+                        .filter((c: any) => (c.name || "").toLowerCase().includes(citySearch.toLowerCase()))
+                        .sort((a: any, b: any) => {
+                          if (a.isOffice !== b.isOffice) return a.isOffice ? -1 : 1;
+                          return (a.name || "").localeCompare(b.name || "");
+                        });
+                      const totalCityPages = Math.ceil(sortedCities.length / citiesPerPage);
+                      const paginatedCities = sortedCities.slice((cityPage - 1) * citiesPerPage, cityPage * citiesPerPage);
+                      return (
+                        <>
+                          {paginatedCities.map((c: any) => (
+                            <tr key={c.id} style={{ opacity: c.isActive ? 1 : 0.5 }}>
+                              <td style={S.td}>{c.name}</td>
+                              <td style={S.td}><span style={S.badge(c.isOffice ? "green" : "yellow")}>{c.isOffice ? "Escritório" : "Concelho"}</span></td>
+                              <td style={S.td}><span style={S.badge(c.isActive ? "green" : "danger")}>{c.isActive ? "Ativa" : "Desativada"}</span></td>
+                              <td style={S.td}>
+                                <button style={{ ...(c.isActive ? S.btnDanger : S.btnSecondary), padding: "5px 10px", fontSize: "12px" }} onClick={() => handleToggleCityStatus(c)}>
+                                  {c.isActive ? "Ocultar" : "Mostrar"}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {totalCityPages > 1 && (
+                            <tr>
+                              <td colSpan={4} style={{ padding: "12px", borderTop: `1px solid ${BRAND.border}` }}>
+                                <div style={{ display: "flex", justifyContent: "center", gap: "10px", alignItems: "center" }}>
+                                  <button disabled={cityPage === 1} onClick={() => setCityPage(p => p - 1)} style={{ ...S.btnSecondary, padding: "4px 12px", fontSize: "12px" }}>Anterior</button>
+                                  <span style={{ fontSize: "12px", fontWeight: "600" }}>Página {cityPage} de {totalCityPages}</span>
+                                  <button disabled={cityPage === totalCityPages} onClick={() => setCityPage(p => p + 1)} style={{ ...S.btnSecondary, padding: "4px 12px", fontSize: "12px" }}>Próxima</button>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

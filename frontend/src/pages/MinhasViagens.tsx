@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTripsData } from '../hooks/useTripsData';
 import { useTripsActions } from '../hooks/useTripsActions';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { CitySelector } from '../components/CitySelector';
 import { getCityName, getTripVehicleString, sameUser } from '../lib/tripFormatters';
 
 const ITEMS_PER_PAGE = 10;
@@ -35,7 +36,20 @@ export function MinhasViagens() {
 
   const [activeTab, setActiveTab] = useState<'proximas' | 'matches' | 'historico' | 'pedidos'>('proximas');
   const [pageUpcoming, setPageUpcoming] = useState(1);
+  const [upFilterOrigin, setUpFilterOrigin] = useState('');
+  const [upFilterDest, setUpFilterDest] = useState('');
+  const [upFilterDate, setUpFilterDate] = useState('');
+  const [pageHistory, setPageHistory] = useState(1);
+  const [pageRequests, setPageRequests] = useState(1);
   const [selectedHistoryTrip, setSelectedHistoryTrip] = useState<any>(null);
+  // Filtros histórico viagens
+  const [histFilterDate, setHistFilterDate] = useState('');
+  const [histFilterOrigin, setHistFilterOrigin] = useState('');
+  const [histFilterDest, setHistFilterDest] = useState('');
+  const [histFilterStatus, setHistFilterStatus] = useState('');
+  // Filtros pedidos de viatura
+  const [spFilterOrigin, setSpFilterOrigin] = useState('');
+  const [spFilterDest, setSpFilterDest] = useState('');
   const [confirm, setConfirm] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const askConfirm = (message: string, onConfirm: () => void) => setConfirm({ message, onConfirm });
@@ -64,8 +78,43 @@ export function MinhasViagens() {
     }
   }, [activeTab, unreadMatchesCount]);
 
-  const totalPageUp = Math.ceil(myUpcomingTrips.length / ITEMS_PER_PAGE);
-  const paginatedUpcoming = myUpcomingTrips.slice((pageUpcoming - 1) * ITEMS_PER_PAGE, pageUpcoming * ITEMS_PER_PAGE);
+  const filteredUpcoming = myUpcomingTrips.filter((t: any) => {
+    if (upFilterOrigin && t.originId.toString() !== upFilterOrigin) return false;
+    if (upFilterDest && t.destinationId.toString() !== upFilterDest) return false;
+    if (upFilterDate && !new Date(t.departureTime).toLocaleDateString('sv-SE').startsWith(upFilterDate)) return false;
+    return true;
+  });
+  const totalPageUp = Math.ceil(filteredUpcoming.length / ITEMS_PER_PAGE);
+  const paginatedUpcoming = filteredUpcoming.slice((pageUpcoming - 1) * ITEMS_PER_PAGE, pageUpcoming * ITEMS_PER_PAGE);
+
+  const filteredHistory = myPastTrips.filter((t: any) => {
+    if (histFilterDate && !new Date(t.departureTime).toLocaleDateString('sv-SE').startsWith(histFilterDate)) return false;
+    if (histFilterOrigin && t.originId.toString() !== histFilterOrigin) return false;
+    if (histFilterDest && t.destinationId.toString() !== histFilterDest) return false;
+    if (histFilterStatus) {
+      const isCancelled = t.status === 'CANCELLED';
+      const isCreator = sameUser(t.userId, dbUser?.id);
+      const hasParticipants = Array.isArray(t.participants) && t.participants.length > 0;
+      let vs: string;
+      if (isCancelled) vs = 'cancelada';
+      else if (t.type === 'NEEDRIDE') vs = t.status === 'MATCHED' ? 'concluida' : 'sem_match';
+      else if (t.type === 'PROVIDER' && isCreator) vs = hasParticipants ? 'concluida' : 'nao_correspondida';
+      else vs = 'concluida';
+      if (vs !== histFilterStatus) return false;
+    }
+    return true;
+  });
+  const totalPageHistory = Math.ceil(filteredHistory.length / ITEMS_PER_PAGE);
+  const paginatedHistory = filteredHistory.slice((pageHistory - 1) * ITEMS_PER_PAGE, pageHistory * ITEMS_PER_PAGE);
+
+  const spSorted = [...(spRequestsData || [])].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const filteredSp = spSorted.filter((r: any) => {
+    if (spFilterOrigin && r.originId?.toString() !== spFilterOrigin) return false;
+    if (spFilterDest && r.destinationId?.toString() !== spFilterDest) return false;
+    return true;
+  });
+  const totalPageRequests = Math.ceil(filteredSp.length / ITEMS_PER_PAGE);
+  const paginatedRequests = filteredSp.slice((pageRequests - 1) * ITEMS_PER_PAGE, pageRequests * ITEMS_PER_PAGE);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -104,8 +153,27 @@ export function MinhasViagens() {
 
       {activeTab === 'proximas' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {paginatedUpcoming.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Ainda não tem viagens agendadas.</div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', background: BRAND.bg, padding: '10px', borderRadius: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', fontWeight: '600', color: BRAND.textMuted, whiteSpace: 'nowrap' }}>Filtrar:</span>
+            <div style={{ flexShrink: 0 }}>
+              <CitySelector value={upFilterOrigin} onChange={v => { setUpFilterOrigin(v); setPageUpcoming(1); }} citiesData={citiesData} placeholder="Origem" />
+            </div>
+            <div style={{ flexShrink: 0 }}>
+              <CitySelector value={upFilterDest} onChange={v => { setUpFilterDest(v); setPageUpcoming(1); }} citiesData={citiesData} placeholder="Destino" />
+            </div>
+            <input
+              type="date"
+              aria-label="Filtrar por data"
+              style={{ ...S.input, fontSize: '12px', width: '140px', flexShrink: 0 }}
+              value={upFilterDate}
+              onChange={e => { setUpFilterDate(e.target.value); setPageUpcoming(1); }}
+            />
+            {(upFilterOrigin || upFilterDest || upFilterDate) && (
+              <button style={{ ...S.btnSecondary, fontSize: '12px', padding: '5px 10px', flexShrink: 0 }} onClick={() => { setUpFilterOrigin(''); setUpFilterDest(''); setUpFilterDate(''); setPageUpcoming(1); }}>Limpar</button>
+            )}
+          </div>
+          {filteredUpcoming.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>{myUpcomingTrips.length === 0 ? 'Ainda não tem viagens agendadas.' : 'Nenhuma viagem encontrada com os filtros selecionados.'}</div>
           ) : (
             <>
               {paginatedUpcoming.map((t: any) => (
@@ -182,48 +250,116 @@ export function MinhasViagens() {
         myPastTrips.length === 0 ? (
           <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Ainda não tem viagens no seu histórico.</div>
         ) : (
-          <div style={{ ...S.card, padding: 0, overflowX: 'auto' }}>
-            <table style={S.table}>
-              <thead><tr><th style={S.th}>Data</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Estado</th><th style={S.th}>Ações</th></tr></thead>
-              <tbody>
-                {myPastTrips.map((t: any) => (
-                  <tr key={t.id}>
-                    <td style={S.td}>{new Date(t.departureTime).toLocaleDateString()}</td>
-                    <td style={S.td}>{getCityName(t.originId, citiesData)}</td>
-                    <td style={S.td}>{getCityName(t.destinationId, citiesData)}</td>
-                    <td style={S.td}><HistoryStatusBadge t={t} dbUserId={dbUser?.id} /></td>
-                    <td style={{ ...S.td, display: 'flex', gap: '6px' }}>
-                      <button style={{ ...S.btnReserve, padding: '4px 8px', fontSize: '11px' }} onClick={() => setSelectedHistoryTrip(t)}>Detalhes</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', background: BRAND.bg, padding: '10px', borderRadius: '8px', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: BRAND.textMuted, whiteSpace: 'nowrap' }}>Filtrar:</span>
+              <input
+                type="date"
+                aria-label="Filtrar por dia"
+                style={{ ...S.input, fontSize: '12px', width: '140px', flexShrink: 0 }}
+                value={histFilterDate}
+                onChange={e => { setHistFilterDate(e.target.value); setPageHistory(1); }}
+              />
+              <div style={{ flexShrink: 0 }}>
+                <CitySelector value={histFilterOrigin} onChange={v => { setHistFilterOrigin(v); setPageHistory(1); }} citiesData={citiesData} placeholder="Origem" />
+              </div>
+              <div style={{ flexShrink: 0 }}>
+                <CitySelector value={histFilterDest} onChange={v => { setHistFilterDest(v); setPageHistory(1); }} citiesData={citiesData} placeholder="Destino" />
+              </div>
+              <select
+                aria-label="Filtrar por estado"
+                style={{ ...S.input, fontSize: '12px', width: '150px', flexShrink: 0 }}
+                value={histFilterStatus}
+                onChange={e => { setHistFilterStatus(e.target.value); setPageHistory(1); }}
+              >
+                <option value="">Todos os estados</option>
+                <option value="concluida">Concluída</option>
+                <option value="sem_match">Sem Match</option>
+                <option value="nao_correspondida">Não correspondida</option>
+              </select>
+              {(histFilterDate || histFilterOrigin || histFilterDest || histFilterStatus) && (
+                <button style={{ ...S.btnSecondary, fontSize: '12px', padding: '5px 10px', flexShrink: 0 }} onClick={() => { setHistFilterDate(''); setHistFilterOrigin(''); setHistFilterDest(''); setHistFilterStatus(''); setPageHistory(1); }}>Limpar</button>
+              )}
+            </div>
+            {filteredHistory.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Nenhuma viagem encontrada com os filtros selecionados.</div>
+            ) : (
+            <div style={{ ...S.card, padding: 0, overflowX: 'auto' }}>
+              <table style={S.table}>
+                <thead><tr><th style={S.th}>Data</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Estado</th><th style={S.th}>Ações</th></tr></thead>
+                <tbody>
+                  {paginatedHistory.map((t: any) => (
+                    <tr key={t.id}>
+                      <td style={S.td}>{new Date(t.departureTime).toLocaleDateString()}</td>
+                      <td style={S.td}>{getCityName(t.originId, citiesData)}</td>
+                      <td style={S.td}>{getCityName(t.destinationId, citiesData)}</td>
+                      <td style={S.td}><HistoryStatusBadge t={t} dbUserId={dbUser?.id} /></td>
+                      <td style={{ ...S.td, display: 'flex', gap: '6px' }}>
+                        <button style={{ ...S.btnReserve, padding: '4px 8px', fontSize: '11px' }} onClick={() => setSelectedHistoryTrip(t)}>Detalhes</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
+            {totalPageHistory > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center', paddingBottom: '10px' }}>
+                <button disabled={pageHistory === 1} onClick={() => setPageHistory(p => p - 1)} style={{ ...S.btnSecondary, padding: '5px 12px', fontSize: '12px' }}>Anterior</button>
+                <span style={{ fontSize: '12px', fontWeight: '600' }}>{pageHistory} / {totalPageHistory}</span>
+                <button disabled={pageHistory === totalPageHistory} onClick={() => setPageHistory(p => p + 1)} style={{ ...S.btnSecondary, padding: '5px 12px', fontSize: '12px' }}>Próxima</button>
+              </div>
+            )}
           </div>
         )
       )}
 
       {activeTab === 'pedidos' && (
-        <div style={{ ...S.card, padding: 0, overflowX: 'auto' }}>
-          {spRequestsData.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Ainda não tem pedidos de viatura registados.</div>
-          ) : (
-            <table style={S.table}>
-              <thead><tr><th style={S.th}>Data do Pedido</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Data Necessária</th><th style={{ ...S.th, minWidth: '200px' }}>Justificação</th></tr></thead>
-              <tbody>
-                {spRequestsData.map((r: any) => (
-                  <tr key={r.id}>
-                    <td style={S.td}>{new Date(r.createdAt).toLocaleDateString('pt-PT')}</td>
-                    <td style={S.td}>{r.origin?.name || '—'}</td>
-                    <td style={S.td}>{r.destination?.name || '—'}</td>
-                    <td style={S.td}>{new Date(r.dateNeeded).toLocaleDateString('pt-PT')}</td>
-                    <td style={S.td}><div style={{ maxWidth: '300px', overflowX: 'auto', whiteSpace: 'nowrap' }}>{r.justification || '—'}</div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        spSorted.length === 0 ? (
+          <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Ainda não tem pedidos de viatura registados.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', background: BRAND.bg, padding: '10px', borderRadius: '8px', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: BRAND.textMuted, whiteSpace: 'nowrap' }}>Filtrar:</span>
+              <div style={{ flexShrink: 0 }}>
+                <CitySelector value={spFilterOrigin} onChange={v => { setSpFilterOrigin(v); setPageRequests(1); }} citiesData={citiesData} placeholder="Origem" />
+              </div>
+              <div style={{ flexShrink: 0 }}>
+                <CitySelector value={spFilterDest} onChange={v => { setSpFilterDest(v); setPageRequests(1); }} citiesData={citiesData} placeholder="Destino" />
+              </div>
+              {(spFilterOrigin || spFilterDest) && (
+                <button style={{ ...S.btnSecondary, fontSize: '12px', padding: '5px 10px', flexShrink: 0 }} onClick={() => { setSpFilterOrigin(''); setSpFilterDest(''); setPageRequests(1); }}>Limpar</button>
+              )}
+            </div>
+            {filteredSp.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Nenhum pedido encontrado com os filtros selecionados.</div>
+            ) : (
+            <div style={{ ...S.card, padding: 0, overflowX: 'auto' }}>
+              <table style={S.table}>
+                <thead><tr><th style={S.th}>Data do Pedido</th><th style={S.th}>Origem</th><th style={S.th}>Destino</th><th style={S.th}>Data Necessária</th><th style={{ ...S.th, minWidth: '200px' }}>Justificação</th></tr></thead>
+                <tbody>
+                  {paginatedRequests.map((r: any) => (
+                    <tr key={r.id}>
+                      <td style={S.td}>{new Date(r.createdAt).toLocaleDateString('pt-PT')}</td>
+                      <td style={S.td}>{r.origin?.name || '—'}</td>
+                      <td style={S.td}>{r.destination?.name || '—'}</td>
+                      <td style={S.td}>{new Date(r.dateNeeded).toLocaleDateString('pt-PT')}</td>
+                      <td style={S.td}><div style={{ maxWidth: '300px', overflowX: 'auto', whiteSpace: 'nowrap' }}>{r.justification || '—'}</div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
+            {totalPageRequests > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center', paddingBottom: '10px' }}>
+                <button disabled={pageRequests === 1} onClick={() => setPageRequests(p => p - 1)} style={{ ...S.btnSecondary, padding: '5px 12px', fontSize: '12px' }}>Anterior</button>
+                <span style={{ fontSize: '12px', fontWeight: '600' }}>{pageRequests} / {totalPageRequests}</span>
+                <button disabled={pageRequests === totalPageRequests} onClick={() => setPageRequests(p => p + 1)} style={{ ...S.btnSecondary, padding: '5px 12px', fontSize: '12px' }}>Próxima</button>
+              </div>
+            )}
+          </div>
+        )
       )}
 
       {selectedHistoryTrip && (
