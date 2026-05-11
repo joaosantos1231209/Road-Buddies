@@ -27,6 +27,7 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
   const [viatura, setViatura] = useState('Viatura Pessoal');
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
   const [createError, setCreateError] = useState('');
+  const [showViaturaWarning, setShowViaturaWarning] = useState(false);
 
   const personalVehicle = getVehicleObj(dbUser?.vehicleInfo);
   const personalVehicleString = `${personalVehicle.brand || '---'} ${personalVehicle.plate ? `- ${personalVehicle.plate}` : ''}`.trim();
@@ -145,6 +146,36 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
 
   return (
     <div style={{ width: '100%' }}>
+      {showViaturaWarning && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}
+          onClick={() => setShowViaturaWarning(false)}
+        >
+          <div
+            style={{ background: BRAND.white, borderRadius: '12px', padding: '24px', maxWidth: '380px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '700', color: BRAND.danger }}>⚠️ ATENÇÃO!</p>
+            <p style={{ margin: '0 0 20px', fontSize: '14px', color: BRAND.text, lineHeight: '1.5' }}>
+              Se não solicitaste viatura da empresa aos Serviços Partilhados, solicita antes de publicares a oferta de boleia!
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                style={S.btnPrimary}
+                onClick={() => { onNavigate('solicitar'); }}
+              >
+                Solicitar Viatura
+              </button>
+              <button
+                style={S.btnSecondary}
+                onClick={() => { setViatura('Viatura da Empresa'); setSelectedVehicleId(null); setReturnDate(''); setShowViaturaWarning(false); }}
+              >
+                OK, continuar com a oferta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleCreate} style={S.card}>
         <div style={S.formGroup}>
           <label style={S.label}>Tipo de Registo</label>
@@ -196,7 +227,22 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
         <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
           {['Viatura Pessoal', 'Viatura da Empresa'].map(v => (
             <label key={v} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13.5px', cursor: 'pointer', opacity: tripType === 'PROVIDER' ? 1 : 0.4 }}>
-              <input type="radio" name="viatura" value={v} checked={viatura === v} onChange={() => { setViatura(v); setSelectedVehicleId(null); setReturnDate(''); }} disabled={tripType !== 'PROVIDER'} /> {v}
+              <input
+                type="radio"
+                name="viatura"
+                value={v}
+                checked={viatura === v}
+                disabled={tripType !== 'PROVIDER'}
+                onChange={() => {
+                  if (v === 'Viatura da Empresa') {
+                    setShowViaturaWarning(true);
+                  } else {
+                    setViatura(v);
+                    setSelectedVehicleId(null);
+                    setReturnDate('');
+                  }
+                }}
+              /> {v}
             </label>
           ))}
         </div>
