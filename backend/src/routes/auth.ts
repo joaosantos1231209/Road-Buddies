@@ -13,7 +13,8 @@ const router = Router();
 
 router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { uid, email, name, picture } = req.user;
+    const { uid, email, name: tokenName, picture } = req.user;
+    const name = req.body?.displayName || tokenName;
 
     console.log(`[Sync] User: ${name} (${email}), UID: ${uid}`);
 

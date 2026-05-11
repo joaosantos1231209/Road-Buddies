@@ -72,7 +72,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
+            body: JSON.stringify({ displayName: firebaseUser.displayName }),
           });
           const data = await response.json();
           setDbUser(data.user);
