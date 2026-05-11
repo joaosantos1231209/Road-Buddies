@@ -69,6 +69,12 @@ export function SolicitarViatura({ onNavigate, isMobile }: Props) {
   return (
     <div style={{ width: '100%' }}>
       <form onSubmit={handleSubmit} style={S.card}>
+        <div style={{ background: '#fefce8', border: '1px solid #fde047', borderRadius: '8px', padding: '12px', marginBottom: '16px', fontSize: '13px', lineHeight: '1.55', color: BRAND.text }}>
+          <p style={{ margin: '0 0 4px', fontWeight: '600', color: '#854d0e' }}>Como funciona?</p>
+          <p style={{ margin: 0 }}>
+            Ao submeteres esta solicitação, é enviado automaticamente um e-mail para os <strong>Serviços Partilhados</strong>. A aceitação ou rejeição é confirmada diretamente por e-mail, fora da aplicação. Após confirmação de um veículo por parte dos Serviços Partilhados, podes criar uma oferta de boleia selecionando o veículo cedido.
+          </p>
+        </div>
         <div style={{ background: BRAND.primarySurface, borderRadius: '8px', padding: '12px', marginBottom: '16px', fontSize: '13px' }}>
           <p style={{ margin: 0, fontWeight: '600', color: BRAND.primaryLight }}>Colaborador</p>
           <p style={{ margin: '2px 0 0', color: BRAND.textMuted }}>{dbUser?.username || 'Utilizador'} · {user?.email}</p>
