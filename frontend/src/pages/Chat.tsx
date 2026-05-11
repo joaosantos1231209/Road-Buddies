@@ -106,6 +106,9 @@ export const Chat = () => {
 
   const getCityName = (id: number) => citiesData.find((c: any) => c.id === id)?.name || "...";
   const currentTrip = trips?.find((t: any) => t.id.toString() === tripId?.toString());
+  const isReadOnly = currentTrip
+    ? currentTrip.status === 'CANCELLED' || new Date(currentTrip.departureTime) < new Date()
+    : false;
 
   let chatTitle = `Chat da Viagem #${tripId}`;
   if (currentTrip && citiesData.length > 0) {
@@ -125,7 +128,9 @@ export const Chat = () => {
           </button>
           <div style={{ display: "flex", flexDirection: "column", marginLeft: "12px" }}>
             <p style={{ margin: 0, fontWeight: "700", fontSize: "16px", color: BRAND.text }}>{chatTitle}</p>
-            <p style={{ margin: 0, fontSize: "12px", color: BRAND.success }}>Ativo</p>
+            <p style={{ margin: 0, fontSize: "12px", color: isReadOnly ? BRAND.textMuted : BRAND.success }}>
+              {isReadOnly ? 'Arquivado' : 'Ativo'}
+            </p>
           </div>
         </div>
       </div>
@@ -167,18 +172,24 @@ export const Chat = () => {
           )}
         </div>
 
-        <div style={{ padding: "16px", background: BRAND.white, borderRadius: "12px", border: `1px solid ${BRAND.border}`, display: "flex", gap: "12px", marginTop: "16px" }}>
-          <input
-            style={{ ...S.input, flex: 1, border: "none", background: BRAND.primarySurface }}
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            placeholder="Escreva a sua mensagem..."
-            onKeyDown={e => { if (e.key === 'Enter') handleSend(e) }}
-          />
-          <button style={S.btnPrimary} onClick={handleSend} disabled={sendMessageMutation.isPending || !content.trim()}>
-            {sendMessageMutation.isPending ? '...' : 'Enviar'}
-          </button>
-        </div>
+        {isReadOnly ? (
+          <div style={{ padding: "12px 16px", background: BRAND.bg, borderRadius: "12px", border: `1px solid ${BRAND.border}`, marginTop: "16px", textAlign: "center", fontSize: "13px", color: BRAND.textMuted }}>
+            Esta conversa está arquivada e não pode receber novas mensagens.
+          </div>
+        ) : (
+          <div style={{ padding: "16px", background: BRAND.white, borderRadius: "12px", border: `1px solid ${BRAND.border}`, display: "flex", gap: "12px", marginTop: "16px" }}>
+            <input
+              style={{ ...S.input, flex: 1, border: "none", background: BRAND.primarySurface }}
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              placeholder="Escreva a sua mensagem..."
+              onKeyDown={e => { if (e.key === 'Enter') handleSend(e) }}
+            />
+            <button style={S.btnPrimary} onClick={handleSend} disabled={sendMessageMutation.isPending || !content.trim()}>
+              {sendMessageMutation.isPending ? '...' : 'Enviar'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
