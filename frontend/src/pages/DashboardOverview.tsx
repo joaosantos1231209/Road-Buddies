@@ -12,7 +12,7 @@ export function DashboardOverview({ isMobile, onNavigate }: Props) {
   const { trips } = useTripsData();
 
   const now = new Date();
-  const upcomingTrips = trips?.filter((t: any) => new Date(t.departureTime) >= now) || [];
+  const upcomingTrips = trips?.filter((t: any) => new Date(t.departureTime) >= now && t.status !== 'CANCELLED') || [];
 
   const providerTrips = upcomingTrips.filter((t: any) => {
     if (t.type !== 'PROVIDER') return false;
@@ -29,7 +29,7 @@ export function DashboardOverview({ isMobile, onNavigate }: Props) {
     t.userId === dbUser?.id || t.participants?.some((p: any) => p.userId === dbUser?.id)
   ) || [];
 
-  const myUpcomingTrips = myTripsRaw.filter((t: any) => new Date(t.departureTime) >= now);
+  const myUpcomingTrips = myTripsRaw.filter((t: any) => new Date(t.departureTime) >= now && t.status !== 'CANCELLED');
 
   const completedCount = myTripsRaw
     .filter((t: any) => new Date(t.departureTime) < now && t.status !== 'CANCELLED')
