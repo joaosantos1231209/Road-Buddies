@@ -4,13 +4,13 @@ import { requireAuth } from "../middleware/auth.js";
 import type { AuthenticatedRequest } from "../middleware/auth.js";
 import { db } from "../db/index.js";
 import { trips, tripParticipants, matches, users, cities, companyVehicles } from "../db/schema.js";
-import { eq, and, or, inArray, desc, sql } from "drizzle-orm";
+import { eq, and, or, inArray, ne, desc, sql } from "drizzle-orm";
 import { runMatchmaking } from "../services/matchmaking.js";
 import { sendPassengerJoinedEmail, sendTripCancelledEmail } from "../lib/email.js";
 import { sendPassengerJoinedNotification, sendTripCancelledNotification } from "../services/fcm.js";
 import { hasCreatorConflict, hasParticipantConflict } from "../services/trips.js";
 import { TripType, TripStatus, MatchStatus } from "../lib/constants.js";
-import { validateBody, parseIntParam, createTripSchema, errorMessage } from "../lib/validate.js";
+import { validateBody, parseIntParam, createTripSchema, editTripSchema, errorMessage } from "../lib/validate.js";
 
 const router = Router();
 
@@ -115,7 +115,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> 
     const limit = Math.min(parseInt(req.query.limit as string) || 100, 200);
     const offset = parseInt(req.query.offset as string) || 0;
     const allTrips = await db.query.trips.findMany({
-      where: eq(trips.status, TripStatus.ACTIVE),
+      where: inArray(trips.status, [TripStatus.ACTIVE, TripStatus.MATCHED, TripStatus.CANCELLED]),
       with: {
         participants: { with: { user: true } },
         creator: true,
@@ -268,6 +268,115 @@ router.post("/:id/leave", async (req: AuthenticatedRequest, res: Response): Prom
   }
 });
 
+router.patch("/:id", validateBody(editTripSchema), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const tripId = parseIntParam(req.params.id);
+    if (!tripId) { res.status(400).json({ error: "ID de viagem inválido" }); return; }
+    const userId = req.user.uid;
+
+    const trip = await db.query.trips.findFirst({
+      where: and(eq(trips.id, tripId), eq(trips.userId, userId)),
+      with: { participants: true },
+    });
+
+    if (!trip) { res.status(404).json({ error: "Viagem não encontrada ou sem permissão" }); return; }
+    if (trip.status === TripStatus.CANCELLED) { res.status(400).json({ error: "Não é possível editar uma viagem cancelada." }); return; }
+    if (trip.type !== TripType.PROVIDER) { res.status(400).json({ error: "Apenas viagens de condutor podem ser editadas." }); return; }
+
+    const { availableSeats, vehicleType, tripVehicleDetails, companyVehicleId, returnTime } = req.body;
+
+    const participantCount = trip.participants.length;
+    if (availableSeats !== undefined && availableSeats < 0) {
+      res.status(400).json({ error: `Não é possível reduzir os lugares abaixo do número de passageiros já reservados (${participantCount}).` });
+      return;
+    }
+
+    let resolvedVehicleDetails: string | null = trip.tripVehicleDetails;
+    let resolvedCompanyVehicleId: number | null = trip.companyVehicleId;
+    let resolvedReturnTime: Date | null = trip.returnTime ? new Date(trip.returnTime) : null;
+
+    if (companyVehicleId === null) {
+      resolvedCompanyVehicleId = null;
+      resolvedReturnTime = null;
+      resolvedVehicleDetails = tripVehicleDetails ?? null;
+    } else if (companyVehicleId !== undefined) {
+      if (!returnTime) { res.status(400).json({ error: "A data de retorno é obrigatória para viatura da empresa." }); return; }
+
+      const departureDate = new Date(trip.departureTime);
+      const returnDate = new Date(returnTime);
+      if (isNaN(returnDate.getTime()) || returnDate < departureDate) {
+        res.status(400).json({ error: "A data de retorno tem de ser igual ou posterior à data de partida." });
+        return;
+      }
+
+      const vehicle = await db.query.companyVehicles.findFirst({
+        where: and(eq(companyVehicles.id, companyVehicleId), eq(companyVehicles.isActive, true)),
+      });
+      if (!vehicle) { res.status(400).json({ error: "Veículo da empresa não encontrado ou inativo." }); return; }
+
+      const rangeStart = new Date(departureDate); rangeStart.setHours(0, 0, 0, 0);
+      const rangeEnd = new Date(returnDate); rangeEnd.setHours(23, 59, 59, 999);
+
+      const vehicleConflict = await db.query.trips.findFirst({
+        where: and(
+          eq(trips.companyVehicleId, companyVehicleId),
+          inArray(trips.status, [TripStatus.ACTIVE, TripStatus.MATCHED]),
+          sql`${trips.departureTime} <= ${rangeEnd} AND ${trips.returnTime} >= ${rangeStart}`,
+          ne(trips.id, tripId),
+        ),
+        columns: { id: true },
+      });
+      if (vehicleConflict) { res.status(400).json({ error: "Este veículo já está ocupado nesse período." }); return; }
+
+      resolvedCompanyVehicleId = companyVehicleId;
+      resolvedReturnTime = returnDate;
+      resolvedVehicleDetails = JSON.stringify({ brand: `${vehicle.brand} ${vehicle.model}`, plate: vehicle.plate });
+    } else if (trip.companyVehicleId && returnTime !== undefined) {
+      const departureDate = new Date(trip.departureTime);
+      const returnDate = new Date(returnTime);
+      if (isNaN(returnDate.getTime()) || returnDate < departureDate) {
+        res.status(400).json({ error: "A data de retorno tem de ser igual ou posterior à data de partida." });
+        return;
+      }
+
+      const rangeStart = new Date(departureDate); rangeStart.setHours(0, 0, 0, 0);
+      const rangeEnd = new Date(returnDate); rangeEnd.setHours(23, 59, 59, 999);
+
+      const vehicleConflict = await db.query.trips.findFirst({
+        where: and(
+          eq(trips.companyVehicleId, trip.companyVehicleId),
+          inArray(trips.status, [TripStatus.ACTIVE, TripStatus.MATCHED]),
+          sql`${trips.departureTime} <= ${rangeEnd} AND ${trips.returnTime} >= ${rangeStart}`,
+          ne(trips.id, tripId),
+        ),
+        columns: { id: true },
+      });
+      if (vehicleConflict) { res.status(400).json({ error: "O veículo já está ocupado nesse período." }); return; }
+
+      resolvedReturnTime = returnDate;
+    }
+
+    await db.update(trips).set({
+      availableSeats: availableSeats ?? trip.availableSeats,
+      vehicleType: vehicleType ?? trip.vehicleType,
+      tripVehicleDetails: resolvedVehicleDetails,
+      companyVehicleId: resolvedCompanyVehicleId,
+      returnTime: resolvedReturnTime,
+      updatedAt: new Date(),
+    }).where(eq(trips.id, tripId));
+
+    const updated = await db.query.trips.findFirst({
+      where: eq(trips.id, tripId),
+      with: { participants: { with: { user: true } }, creator: true },
+    });
+
+    res.json({ trip: updated });
+  } catch (error) {
+    console.error("Edit Trip Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.delete("/:id", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const tripId = parseIntParam(req.params.id);
@@ -285,7 +394,7 @@ router.delete("/:id", async (req: AuthenticatedRequest, res: Response): Promise<
 
       if (!trip) throw new Error("Viagem não encontrada ou sem permissão");
 
-      await tx.update(trips).set({ status: TripStatus.CANCELLED }).where(eq(trips.id, tripId));
+      await tx.update(trips).set({ status: TripStatus.CANCELLED, companyVehicleId: null }).where(eq(trips.id, tripId));
 
       if (trip.type === TripType.PROVIDER) {
         for (const p of trip.participants) {

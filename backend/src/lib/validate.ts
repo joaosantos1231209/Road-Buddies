@@ -28,6 +28,14 @@ export function validateBody<T extends z.ZodTypeAny>(schema: T) {
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
+export const editTripSchema = z.object({
+  availableSeats: z.coerce.number().int().min(0).max(8).optional(),
+  vehicleType: z.string().max(100).nullable().optional(),
+  tripVehicleDetails: z.string().max(500).nullable().optional(),
+  companyVehicleId: z.coerce.number().int().positive().nullable().optional(),
+  returnTime: z.string().nullable().optional(),
+});
+
 export const createTripSchema = z.object({
   type: z.enum(["PROVIDER", "NEEDRIDE"]),
   originId: z.coerce.number().int().positive(),

@@ -64,7 +64,30 @@ export function useTripsActions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
+      queryClient.invalidateQueries({ queryKey: ['company_vehicles_available'] });
       showToast('Viagem cancelada com sucesso.', 'success');
+    },
+    onError: (error: Error) => { showToast(error.message, 'error'); },
+  });
+
+  const editTripMutation = useMutation({
+    mutationFn: async ({ tripId, data }: { tripId: number; data: any }) => {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/trips/${tripId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Erro ao editar viagem');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trips'] });
+      queryClient.invalidateQueries({ queryKey: ['company_vehicles_available'] });
+      showToast('Viagem atualizada com sucesso!', 'success');
     },
     onError: (error: Error) => { showToast(error.message, 'error'); },
   });
@@ -91,5 +114,5 @@ export function useTripsActions() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['unreadChats'] }); },
   });
 
-  return { joinTripMutation, leaveTripMutation, cancelTripMutation, markMatchesReadMutation, markAllMessagesReadMutation };
+  return { joinTripMutation, leaveTripMutation, cancelTripMutation, editTripMutation, markMatchesReadMutation, markAllMessagesReadMutation };
 }
