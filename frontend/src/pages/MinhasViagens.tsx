@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTripsData } from '../hooks/useTripsData';
 import { useTripsActions } from '../hooks/useTripsActions';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { EditTripModal } from '../components/EditTripModal';
 import { CitySelector } from '../components/CitySelector';
 import { getCityName, getTripVehicleString, sameUser } from '../lib/tripFormatters';
 
@@ -32,7 +33,7 @@ export function MinhasViagens() {
   const [, setLocation] = useLocation();
   const { dbUser } = useAuth() as any;
   const { citiesData, trips, spRequestsData, matchesData, unreadChats } = useTripsData();
-  const { joinTripMutation, leaveTripMutation, cancelTripMutation, markMatchesReadMutation, markAllMessagesReadMutation } = useTripsActions();
+  const { joinTripMutation, leaveTripMutation, cancelTripMutation, editTripMutation, markMatchesReadMutation, markAllMessagesReadMutation } = useTripsActions();
 
   const [activeTab, setActiveTab] = useState<'proximas' | 'matches' | 'historico' | 'pedidos'>('proximas');
   const [pageUpcoming, setPageUpcoming] = useState(1);
@@ -53,6 +54,8 @@ export function MinhasViagens() {
   const [spFilterOrigin, setSpFilterOrigin] = useState('');
   const [spFilterDest, setSpFilterDest] = useState('');
   const [confirm, setConfirm] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [editingTrip, setEditingTrip] = useState<any>(null);
+  const [editError, setEditError] = useState('');
 
   const askConfirm = (message: string, onConfirm: () => void) => setConfirm({ message, onConfirm });
 
@@ -62,11 +65,11 @@ export function MinhasViagens() {
   ) || [];
 
   const myUpcomingTrips = myTripsRaw
-    .filter((t: any) => new Date(t.departureTime) >= now)
+    .filter((t: any) => new Date(t.departureTime) >= now && t.status !== 'CANCELLED')
     .sort((a: any, b: any) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime());
 
   const myPastTrips = myTripsRaw
-    .filter((t: any) => new Date(t.departureTime) < now && t.status !== 'CANCELLED')
+    .filter((t: any) => new Date(t.departureTime) < now || t.status === 'CANCELLED')
     .sort((a: any, b: any) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime());
 
   const unreadMatchesCount = matchesData?.filter((m: any) => !m.isRead).length || 0;
@@ -129,6 +132,25 @@ export function MinhasViagens() {
           danger
         />
       )}
+      {editingTrip && (
+        <EditTripModal
+          trip={editingTrip}
+          citiesData={citiesData}
+          onClose={() => { setEditingTrip(null); setEditError(''); }}
+          onSave={(data) => {
+            setEditError('');
+            editTripMutation.mutate(
+              { tripId: editingTrip.id, data },
+              {
+                onSuccess: () => setEditingTrip(null),
+                onError: (err: Error) => setEditError(err.message),
+              }
+            );
+          }}
+          isSaving={editTripMutation.isPending}
+          error={editError}
+        />
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button style={{ ...S.tab(activeTab === 'proximas'), position: 'relative' }} onClick={() => setActiveTab('proximas')}>
@@ -167,7 +189,7 @@ export function MinhasViagens() {
               type={upFilterDateType}
               placeholder="Data"
               aria-label="Filtrar por data"
-              style={{ ...S.input, fontSize: '12px', width: '140px', flexShrink: 0 }}
+              style={{ ...S.input, width: '140px', flexShrink: 0 }}
               value={upFilterDate}
               onFocus={() => setUpFilterDateType('date')}
               onBlur={() => { if (!upFilterDate) setUpFilterDateType('text'); }}
@@ -193,7 +215,12 @@ export function MinhasViagens() {
                   <p style={S.travelCardSub}>{new Date(t.departureTime).toLocaleString()}{t.type === 'PROVIDER' ? ` · ${getTripVehicleString(t)}` : ''}</p>
                   <div style={S.travelCardActions}>
                     {t.userId === dbUser?.id ? (
-                      <button style={S.btnDanger} onClick={() => askConfirm('Tem a certeza que deseja cancelar esta viagem?', () => cancelTripMutation.mutate(t.id))}>Cancelar</button>
+                      <>
+                        {t.type === 'PROVIDER' && (
+                          <button style={S.btnSecondary} onClick={() => { setEditError(''); setEditingTrip(t); }}>Editar</button>
+                        )}
+                        <button style={S.btnDanger} onClick={() => askConfirm('Tem a certeza que deseja cancelar esta viagem?', () => cancelTripMutation.mutate(t.id))}>Cancelar</button>
+                      </>
                     ) : (
                       <button style={S.btnDanger} onClick={() => askConfirm('Tem a certeza que deseja sair desta viagem?', () => leaveTripMutation.mutate(t.id))}>Sair da Viagem</button>
                     )}
@@ -262,7 +289,7 @@ export function MinhasViagens() {
                 type={histFilterDateType}
                 placeholder="Data"
                 aria-label="Filtrar por dia"
-                style={{ ...S.input, fontSize: '13px', width: '140px', flexShrink: 0 }}
+                style={{ ...S.input, width: '140px', flexShrink: 0 }}
                 value={histFilterDate}
                 onFocus={() => setHistFilterDateType('date')}
                 onBlur={() => { if (!histFilterDate) setHistFilterDateType('text'); }}
@@ -284,6 +311,7 @@ export function MinhasViagens() {
                 <option value="concluida">Concluída</option>
                 <option value="sem_match">Sem Match</option>
                 <option value="nao_correspondida">Não correspondida</option>
+                <option value="cancelada">Cancelada</option>
               </select>
               {(histFilterDate || histFilterOrigin || histFilterDest || histFilterStatus) && (
                 <button style={{ ...S.btnSecondary, fontSize: '12px', padding: '5px 10px', flexShrink: 0 }} onClick={() => { setHistFilterDate(''); setHistFilterOrigin(''); setHistFilterDest(''); setHistFilterStatus(''); setPageHistory(1); }}>Limpar</button>
@@ -383,7 +411,16 @@ export function MinhasViagens() {
                 <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{getCityName(selectedHistoryTrip.originId, citiesData)} → {getCityName(selectedHistoryTrip.destinationId, citiesData)}</p>
                 <p style={{ margin: 0, fontSize: '12px', color: BRAND.textMuted }}>{new Date(selectedHistoryTrip.departureTime).toLocaleString('pt-PT')}</p>
               </div>
-              {selectedHistoryTrip.type === 'NEEDRIDE' && selectedHistoryTrip.userId === dbUser?.id ? (
+              {selectedHistoryTrip.status === 'CANCELLED' ? (
+                <div>
+                  <label style={{ ...S.label, marginBottom: '4px' }}>O seu papel</label>
+                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>
+                    {selectedHistoryTrip.userId === dbUser?.id
+                      ? (selectedHistoryTrip.type === 'NEEDRIDE' ? 'Passageiro (viagem cancelada)' : 'Condutor (viagem cancelada)')
+                      : 'Passageiro (viagem cancelada)'}
+                  </p>
+                </div>
+              ) : selectedHistoryTrip.type === 'NEEDRIDE' && selectedHistoryTrip.userId === dbUser?.id ? (
                 <div>
                   <label style={{ ...S.label, marginBottom: '4px' }}>O seu papel</label>
                   <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Seria passageiro</p>
@@ -411,7 +448,14 @@ export function MinhasViagens() {
                 </>
               )}
             </div>
-            <button style={{ ...S.submitBtn, marginTop: '24px' }} onClick={() => setSelectedHistoryTrip(null)}>Fechar</button>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '24px' }}>
+              {selectedHistoryTrip.participants?.length > 0 && (
+                <button style={{ ...S.btnChat, display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }} onClick={() => { setSelectedHistoryTrip(null); setLocation(`/chat/${selectedHistoryTrip.id}`); }}>
+                  <MessageSquare size={14} /> Chat
+                </button>
+              )}
+              <button style={{ ...S.submitBtn, flex: 1, marginTop: 0 }} onClick={() => setSelectedHistoryTrip(null)}>Fechar</button>
+            </div>
           </div>
         </div>
       )}

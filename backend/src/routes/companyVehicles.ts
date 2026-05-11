@@ -4,7 +4,7 @@ import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import type { AuthenticatedRequest } from "../middleware/auth.js";
 import { db } from "../db/index.js";
 import { companyVehicles, trips, cities, users } from "../db/schema.js";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray, ne, sql } from "drizzle-orm";
 import { validateBody, parseIntParam, createCompanyVehicleSchema, errorMessage } from "../lib/validate.js";
 import { isValidLicensePlate } from "../lib/utils.js";
 import { TripStatus } from "../lib/constants.js";
@@ -17,6 +17,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> 
   try {
     const fromParam = req.query.from as string | undefined;
     const toParam = req.query.to as string | undefined;
+    const excludeTripId = parseIntParam(req.query.excludeTripId as string | undefined);
 
     let includeAll = false;
     if (req.query.all === "true") {
@@ -60,6 +61,7 @@ router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> 
           inArray(trips.companyVehicleId, vehicleIds),
           inArray(trips.status, [TripStatus.ACTIVE, TripStatus.MATCHED]),
           sql`${trips.departureTime} <= ${rangeEnd} AND ${trips.returnTime} >= ${rangeStart}`,
+          excludeTripId ? ne(trips.id, excludeTripId) : undefined,
         ));
 
       for (const t of occupiedTrips) {
