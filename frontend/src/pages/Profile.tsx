@@ -273,8 +273,8 @@ export const Profile = () => {
           <p style={{ margin: "0 0 12px", fontWeight: "600", fontSize: "14px" }}>Estatísticas</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
             {[
-              ["Viagens Criadas", stats.created],
               ["Viagens Concluídas", stats.completed],
+              ["Viagens Concluídas como Condutor", stats.created],
               ["Pessoas Transportadas", stats.passengers]
             ].map(([k, v]) => (
               <div key={k} style={{ background: BRAND.bg, borderRadius: "8px", padding: "12px", textAlign: "center" }}>
