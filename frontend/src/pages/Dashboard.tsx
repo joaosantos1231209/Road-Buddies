@@ -81,6 +81,9 @@ export default function Dashboard() {
   }, [page, dbUser?.isAdmin]);
 
   const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 6 ? 'Boa Noite' : hour < 13 ? 'Bom Dia' : hour < 19 ? 'Boa Tarde' : 'Boa Noite';
+  const greetingTitle = `${greeting}, ${dbUser?.username || ''}!`;
   const unreadMatchesCount = matchesData?.filter((m: any) => !m.isRead).length || 0;
 
   const myUpcomingTrips = trips?.filter((t: any) =>
@@ -116,7 +119,7 @@ export default function Dashboard() {
           <>
             <Header {...headerProps} />
             <div style={S.content}>
-              <p style={S.pageTitle}>Dashboard</p>
+              <p style={S.pageTitle}>{greetingTitle}</p>
               <DashboardOverview isMobile={isMobile} onNavigate={setPage} />
             </div>
           </>
@@ -180,7 +183,7 @@ export default function Dashboard() {
           <>
             <Header {...headerProps} />
             <div style={S.content}>
-              <p style={S.pageTitle}>Dashboard</p>
+              <p style={S.pageTitle}>{greetingTitle}</p>
               <DashboardOverview isMobile={isMobile} onNavigate={setPage} />
             </div>
           </>
