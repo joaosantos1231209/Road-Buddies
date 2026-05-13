@@ -38,7 +38,7 @@ export function ProximasViagens() {
   });
 
   const needRideTrips = upcomingTrips.filter((t: Trip) =>
-    t.type === 'NEEDRIDE' && t.userId !== dbUser?.id
+    t.type === 'NEEDRIDE' && t.userId !== dbUser?.id && !t.hidden
   );
 
   const isOffers = activeTab === 'ofertas';

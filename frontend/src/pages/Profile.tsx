@@ -56,6 +56,12 @@ export const Profile = () => {
     if (!dbUser) return { total: 0, created: 0, completed: 0, passengers: 0 };
     const now = new Date();
 
+    const getTripEffectiveEnd = (t: any): Date => {
+      if (t.returnTime) return new Date(t.returnTime);
+      const d = new Date(t.departureTime);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    };
+
     // My trips (as creator or participant)
     const myTripsRaw = trips.filter((t: any) =>
       t.userId === dbUser.id ||
@@ -66,15 +72,13 @@ export const Profile = () => {
     const pastProviderTrips = trips.filter((t: any) =>
       t.userId === dbUser.id &&
       t.type === 'PROVIDER' &&
-      new Date(t.departureTime) < now &&
+      getTripEffectiveEnd(t) < now &&
       t.status !== 'CANCELLED'
     );
 
     // Past completed trips (Provider or Matched Seeker)
     const pastCompletedTrips = myTripsRaw.filter((t: any) => {
-      const isPast = new Date(t.departureTime) < now;
-      if (!isPast || t.status === 'CANCELLED') return false;
-      // If seeker, only count if matched
+      if (getTripEffectiveEnd(t) >= now || t.status === 'CANCELLED') return false;
       if (t.type === 'NEEDRIDE' && t.status !== 'MATCHED') return false;
       return true;
     });

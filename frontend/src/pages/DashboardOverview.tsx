@@ -29,10 +29,16 @@ export function DashboardOverview({ isMobile, onNavigate }: Props) {
     t.userId === dbUser?.id || t.participants?.some((p: any) => p.userId === dbUser?.id)
   ) || [];
 
-  const myUpcomingTrips = myTripsRaw.filter((t: any) => new Date(t.departureTime) >= now && t.status !== 'CANCELLED');
+  const getTripEffectiveEnd = (t: any): Date => {
+    if (t.returnTime) return new Date(t.returnTime);
+    const d = new Date(t.departureTime);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+  };
+
+  const myUpcomingTrips = myTripsRaw.filter((t: any) => getTripEffectiveEnd(t) >= now && t.status !== 'CANCELLED');
 
   const completedCount = myTripsRaw
-    .filter((t: any) => new Date(t.departureTime) < now && t.status !== 'CANCELLED')
+    .filter((t: any) => getTripEffectiveEnd(t) < now && t.status !== 'CANCELLED')
     .filter((t: any) => t.type !== 'NEEDRIDE' || t.status === 'MATCHED').length;
 
   return (

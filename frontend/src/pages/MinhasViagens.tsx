@@ -60,16 +60,23 @@ export function MinhasViagens() {
   const askConfirm = (message: string, onConfirm: () => void) => setConfirm({ message, onConfirm });
 
   const now = new Date();
+
+  const getTripEffectiveEnd = (t: any): Date => {
+    if (t.returnTime) return new Date(t.returnTime);
+    const d = new Date(t.departureTime);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+  };
+
   const myTripsRaw = trips?.filter((t: any) =>
     t.userId === dbUser?.id || t.participants?.some((p: any) => p.userId === dbUser?.id)
   ) || [];
 
   const myUpcomingTrips = myTripsRaw
-    .filter((t: any) => new Date(t.departureTime) >= now && t.status !== 'CANCELLED')
+    .filter((t: any) => getTripEffectiveEnd(t) >= now && t.status !== 'CANCELLED' && !t.hidden)
     .sort((a: any, b: any) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime());
 
   const myPastTrips = myTripsRaw
-    .filter((t: any) => new Date(t.departureTime) < now || t.status === 'CANCELLED')
+    .filter((t: any) => getTripEffectiveEnd(t) < now || t.status === 'CANCELLED')
     .sort((a: any, b: any) => new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime());
 
   const unreadMatchesCount = matchesData?.filter((m: any) => !m.isRead).length || 0;
@@ -177,6 +184,12 @@ export function MinhasViagens() {
 
       {activeTab === 'proximas' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 14px', background: BRAND.primarySurface, borderRadius: '8px', border: `1px solid ${BRAND.primaryLight}33` }}>
+            <span style={{ fontSize: '14px', flexShrink: 0 }}>ℹ️</span>
+            <p style={{ margin: 0, fontSize: '12.5px', color: BRAND.textMuted, lineHeight: '1.5' }}>
+              As tuas viagens aparecem <strong style={{ color: BRAND.text }}>apenas aqui</strong>. Na aba <strong style={{ color: BRAND.text }}>Próximas Viagens</strong> (menu principal) só aparecem viagens de outros colegas — as tuas não são listadas lá para evitar confusão.
+            </p>
+          </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', background: BRAND.bg, padding: '10px', borderRadius: '8px', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', fontWeight: '600', color: BRAND.textMuted, whiteSpace: 'nowrap' }}>Filtrar:</span>
             <div style={{ flexShrink: 0 }}>
@@ -259,9 +272,15 @@ export function MinhasViagens() {
 
       {activeTab === 'matches' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {!matchesData || matchesData.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>Ainda não foram encontrados matches para os seus pedidos.</div>
-          ) : matchesData.map((m: any) => (
+          {(() => {
+            const pendingMatches = matchesData?.filter((m: any) => m.status !== 'ACCEPTED') || [];
+            return pendingMatches.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: BRAND.textMuted, fontSize: '13px' }}>
+                {!matchesData || matchesData.length === 0
+                  ? 'Ainda não foram encontrados matches para os seus pedidos.'
+                  : 'Todos os matches foram aceites. As viagens reservadas aparecem em Próximas.'}
+              </div>
+            ) : pendingMatches.map((m: any) => (
             <div key={m.id} style={S.travelCard}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <p style={S.travelCardTitle}>{m.providerTrip?.creator?.username || 'Condutor'}</p>
@@ -270,11 +289,11 @@ export function MinhasViagens() {
               <p style={S.travelCardSub}>{getCityName(m.providerTrip?.originId, citiesData)} → {getCityName(m.providerTrip?.destinationId, citiesData)}</p>
               <p style={S.travelCardSub}>{new Date(m.providerTrip?.departureTime).toLocaleString()} · {m.providerTrip?.availableSeats} lugares restantes</p>
               <div style={S.travelCardActions}>
-                {m.status === 'PENDING' && <button style={S.btnReserve} onClick={() => joinTripMutation.mutate(m.providerTripId)} disabled={joinTripMutation.isPending}>{joinTripMutation.isPending ? 'A reservar...' : 'Reservar Lugar'}</button>}
-                {m.status === 'ACCEPTED' && <span style={{ fontSize: '13px', color: BRAND.success, fontWeight: '600' }}>Lugar Reservado!</span>}
+                <button style={S.btnReserve} onClick={() => joinTripMutation.mutate(m.providerTripId)} disabled={joinTripMutation.isPending}>{joinTripMutation.isPending ? 'A reservar...' : 'Reservar Lugar'}</button>
               </div>
             </div>
-          ))}
+          ));
+          })()}
         </div>
       )}
 
