@@ -23,6 +23,7 @@ export function useTripsActions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
       showToast('Lugar reservado com sucesso!', 'success');
     },
     onError: (error: Error) => { showToast(error.message, 'error'); },
