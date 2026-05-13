@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { S, BRAND } from '../lib/design';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,6 +28,7 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
   const [createError, setCreateError] = useState('');
   const [showViaturaWarning, setShowViaturaWarning] = useState(false);
+  const [showOfficeMismatchWarning, setShowOfficeMismatchWarning] = useState(false);
 
   const personalVehicle = getVehicleObj(dbUser?.vehicleInfo);
   const personalVehicleString = `${personalVehicle.brand || '---'} ${personalVehicle.plate ? `- ${personalVehicle.plate}` : ''}`.trim();
@@ -61,6 +62,15 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
       return `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`);
     });
   }, [companyVehicles, origin]);
+
+  const selectedVehicle = companyVehicles?.find(v => v.id === selectedVehicleId) ?? null;
+  const officeMismatch = selectedVehicle && origin
+    ? selectedVehicle.officeId !== parseInt(origin)
+    : false;
+
+  useEffect(() => {
+    if (officeMismatch) setShowOfficeMismatchWarning(true);
+  }, [officeMismatch]);
 
   const createTripMutation = useMutation({
     mutationFn: async (newTrip: any) => {
@@ -321,6 +331,24 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
                 )}
               </div>
             )}
+          </div>
+        )}
+        {showOfficeMismatchWarning && officeMismatch && selectedVehicle && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', background: BRAND.warningBg, borderRadius: '8px', border: `1px solid ${BRAND.warning}33`, marginBottom: '4px' }}>
+            <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '700', color: BRAND.warning }}>Escritório do veículo diferente da origem</p>
+              <p style={{ margin: '0 0 8px', fontSize: '12.5px', color: BRAND.text, lineHeight: '1.5' }}>
+                O veículo <strong>{selectedVehicle.brand} {selectedVehicle.model}</strong> pertence ao escritório de <strong>{selectedVehicle.office?.name}</strong>, que é diferente da origem selecionada. Confirma que está correto ou altera a origem da viagem.
+              </p>
+              <button
+                type="button"
+                style={{ ...S.btnSecondary, fontSize: '12px', padding: '4px 10px' }}
+                onClick={() => setShowOfficeMismatchWarning(false)}
+              >
+                OK, está correto
+              </button>
+            </div>
           </div>
         )}
         <button type="submit" style={S.submitBtn} disabled={createTripMutation.isPending}>
