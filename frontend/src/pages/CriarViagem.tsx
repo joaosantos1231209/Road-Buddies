@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { S, BRAND } from '../lib/design';
 import { useAuth } from '../contexts/AuthContext';
 import { useTripsData } from '../hooks/useTripsData';
@@ -37,7 +37,7 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
   const tripDateFrom = date ? date.split('T')[0] : null;
   const tripDateTo = returnDate ? returnDate.split('T')[0] : tripDateFrom;
 
-  const { data: companyVehicles, isLoading: vehiclesLoading } = useQuery({
+  const { data: companyVehicles, isLoading: vehiclesLoading, isFetching: vehiclesFetching } = useQuery({
     queryKey: ['company_vehicles_available', tripDateFrom, tripDateTo],
     queryFn: async () => {
       const token = await getToken();
@@ -49,7 +49,14 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
       return res.json() as Promise<Array<{ id: number; brand: string; model: string; plate: string; officeId: number; office: { id: number; name: string }; available: boolean }>>;
     },
     enabled: isCompanyVehicle,
+    placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (!selectedVehicleId || vehiclesFetching || !companyVehicles) return;
+    const vehicle = companyVehicles.find(v => v.id === selectedVehicleId);
+    if (!vehicle || !vehicle.available) setSelectedVehicleId(null);
+  }, [companyVehicles, vehiclesFetching, selectedVehicleId]);
 
   const sortedVehicles = React.useMemo(() => {
     if (!companyVehicles) return [];
@@ -178,7 +185,7 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
               </button>
               <button
                 style={S.btnSecondary}
-                onClick={() => { setViatura('Viatura da Empresa'); setSelectedVehicleId(null); setReturnDate(''); setShowViaturaWarning(false); }}
+                onClick={() => { setViatura('Viatura da Empresa'); setSelectedVehicleId(null); setReturnDate(date || ''); setShowViaturaWarning(false); }}
               >
                 OK, continuar com a oferta
               </button>
@@ -212,7 +219,7 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
               type="datetime-local"
               value={date}
               min={getTodayDatetimeLocal()}
-              onChange={e => { setDate(e.target.value); setSelectedVehicleId(null); if (returnDate && e.target.value > returnDate) setReturnDate(''); }}
+              onChange={e => { setDate(e.target.value); if (returnDate && e.target.value > returnDate) setReturnDate(e.target.value); }}
               required
             />
           </div>
@@ -224,7 +231,7 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
                 type="datetime-local"
                 value={returnDate}
                 min={date || getTodayDatetimeLocal()}
-                onChange={e => { setReturnDate(e.target.value); setSelectedVehicleId(null); }}
+                onChange={e => { setReturnDate(e.target.value); }}
                 required
               />
             </div>
@@ -267,11 +274,13 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
               <div>
                 <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '600', color: BRAND.primaryLight }}>
                   Selecionar Veículo da Empresa
-                  {(!date || !returnDate) && (
+                  {(!date || !returnDate) ? (
                     <span style={{ fontWeight: 400, color: BRAND.textMuted }}>
                       {' '}— {!date ? 'selecione uma data de partida' : 'selecione a data de retorno'} para ver disponibilidade
                     </span>
-                  )}
+                  ) : vehiclesFetching && !vehiclesLoading ? (
+                    <span style={{ fontWeight: 400, color: BRAND.textMuted }}> — a verificar disponibilidade...</span>
+                  ) : null}
                 </p>
                 {vehiclesLoading ? (
                   <p style={{ margin: 0, fontSize: '13px', color: BRAND.textMuted }}>A carregar veículos...</p>
