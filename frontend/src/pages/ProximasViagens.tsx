@@ -7,6 +7,7 @@ import { useTripsData } from '../hooks/useTripsData';
 import { useTripsActions } from '../hooks/useTripsActions';
 import { CitySelector } from '../components/CitySelector';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { EditTripModal } from '../components/EditTripModal';
 import { getCityName, getTripVehicleString } from '../lib/tripFormatters';
 import type { Trip } from '../types';
 
@@ -16,7 +17,7 @@ export function ProximasViagens() {
   const [, setLocation] = useLocation();
   const { dbUser } = useAuth() as any;
   const { citiesData, trips } = useTripsData();
-  const { joinTripMutation, leaveTripMutation, cancelTripMutation } = useTripsActions();
+  const { joinTripMutation, leaveTripMutation, cancelTripMutation, editTripMutation } = useTripsActions();
 
   const [activeTab, setActiveTab] = useState('ofertas');
   const [filterOrigin, setFilterOrigin] = useState('');
@@ -26,6 +27,8 @@ export function ProximasViagens() {
   const [pageRequests, setPageRequests] = useState(1);
   const [filterDateType, setFilterDateType] = useState('text');
   const [confirm, setConfirm] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
+  const [editError, setEditError] = useState('');
 
   const now = new Date();
   const upcomingTrips = trips?.filter((t: Trip) => new Date(t.departureTime) >= now && t.status !== 'CANCELLED') || [];
@@ -34,11 +37,12 @@ export function ProximasViagens() {
     if (t.type !== 'PROVIDER') return false;
     const isMine = t.userId === dbUser?.id;
     const isParticipant = t.participants?.some(p => p.userId === dbUser?.id);
-    return !isMine && !isParticipant && t.availableSeats > 0;
+    if (isMine || isParticipant) return true;
+    return t.availableSeats > 0;
   });
 
   const needRideTrips = upcomingTrips.filter((t: Trip) =>
-    t.type === 'NEEDRIDE' && t.userId !== dbUser?.id && !t.hidden
+    t.type === 'NEEDRIDE' && !t.hidden
   );
 
   const isOffers = activeTab === 'ofertas';
@@ -69,6 +73,25 @@ export function ProximasViagens() {
           onCancel={() => setConfirm(null)}
           confirmLabel="Confirmar"
           danger
+        />
+      )}
+      {editingTrip && (
+        <EditTripModal
+          trip={editingTrip}
+          citiesData={citiesData}
+          onClose={() => { setEditingTrip(null); setEditError(''); }}
+          onSave={(data) => {
+            setEditError('');
+            editTripMutation.mutate(
+              { tripId: editingTrip.id, data },
+              {
+                onSuccess: () => setEditingTrip(null),
+                onError: (err: Error) => setEditError(err.message),
+              }
+            );
+          }}
+          isSaving={editTripMutation.isPending}
+          error={editError}
         />
       )}
 
@@ -106,28 +129,41 @@ export function ProximasViagens() {
         ) : paginatedList.map((t: Trip) => {
           const isMine = t.userId === dbUser?.id;
           const hasJoined = t.participants?.some(p => p.userId === dbUser?.id);
+          const isMyTrip = isMine || hasJoined;
           const isFull = t.availableSeats <= 0;
+          const myRole = isMine && t.type === 'PROVIDER' ? 'Condutor' : 'Passageiro';
           return (
-            <div key={t.id} style={S.travelCard}>
+            <div key={t.id} style={{
+              ...S.travelCard,
+              ...(isMyTrip && {
+                background: BRAND.successBg,
+                border: `1.5px solid ${BRAND.success}`,
+              }),
+            }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <p style={S.travelCardTitle}>
-                  {t.creator?.username || `User #${t.userId}`}
-                  {isMine && <span style={{ fontSize: '11px', background: BRAND.primarySurface, color: BRAND.primaryLight, borderRadius: '4px', padding: '2px 6px', marginLeft: '6px' }}>A minha viagem</span>}
-                </p>
+                <p style={S.travelCardTitle}>{t.creator?.username || `User #${t.userId}`}</p>
                 <span style={S.badge(isOffers ? 'green' : 'yellow')}>{isOffers ? `${t.availableSeats} lugares` : 'Pedido'}</span>
               </div>
+              {isMyTrip && (
+                <span style={{ ...S.badge('green'), alignSelf: 'flex-start' }}>A TUA VIAGEM · {myRole}</span>
+              )}
               <p style={S.travelCardSub}>{getCityName(t.originId, citiesData)} → {getCityName(t.destinationId, citiesData)}</p>
               <p style={S.travelCardSub}>{new Date(t.departureTime).toLocaleString()}{t.type === 'PROVIDER' ? ` · ${getTripVehicleString(t)}` : ''}</p>
               <div style={S.travelCardActions}>
                 {isMine ? (
                   <>
-                    <button
-                      style={{ ...S.btnDanger, opacity: cancelTripMutation.isPending ? 0.6 : 1 }}
-                      disabled={cancelTripMutation.isPending}
-                      onClick={() => askConfirm('Tem a certeza que deseja cancelar esta viagem?', () => cancelTripMutation.mutate(t.id))}
-                    >
-                      {cancelTripMutation.isPending ? 'A cancelar...' : 'Cancelar'}
-                    </button>
+                    {t.type === 'PROVIDER' && (
+                      <>
+                        <button style={S.btnSecondary} onClick={() => { setEditError(''); setEditingTrip(t); }}>Editar</button>
+                        <button
+                          style={{ ...S.btnDanger, opacity: cancelTripMutation.isPending ? 0.6 : 1 }}
+                          disabled={cancelTripMutation.isPending}
+                          onClick={() => askConfirm('Tem a certeza que deseja cancelar esta viagem?', () => cancelTripMutation.mutate(t.id))}
+                        >
+                          {cancelTripMutation.isPending ? 'A cancelar...' : 'Cancelar'}
+                        </button>
+                      </>
+                    )}
                     {t.participants && t.participants.length > 0 && (
                       <button style={{ ...S.btnChat, display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setLocation(`/chat/${t.id}`)}>
                         <MessageSquare size={14} /> Chat

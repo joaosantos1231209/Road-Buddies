@@ -184,12 +184,6 @@ export function MinhasViagens() {
 
       {activeTab === 'proximas' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 14px', background: BRAND.primarySurface, borderRadius: '8px', border: `1px solid ${BRAND.primaryLight}33` }}>
-            <span style={{ fontSize: '14px', flexShrink: 0 }}>ℹ️</span>
-            <p style={{ margin: 0, fontSize: '12.5px', color: BRAND.textMuted, lineHeight: '1.5' }}>
-              As tuas viagens aparecem <strong style={{ color: BRAND.text }}>apenas aqui</strong>. Na aba <strong style={{ color: BRAND.text }}>Próximas Viagens</strong> (menu principal) só aparecem viagens de outros colegas — as tuas não são listadas lá para evitar confusão.
-            </p>
-          </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', background: BRAND.bg, padding: '10px', borderRadius: '8px', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', fontWeight: '600', color: BRAND.textMuted, whiteSpace: 'nowrap' }}>Filtrar:</span>
             <div style={{ flexShrink: 0 }}>
