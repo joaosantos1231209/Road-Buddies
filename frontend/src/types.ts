@@ -78,6 +78,21 @@ export interface SpRequest {
   destination?: City;
 }
 
+export type SubscriptionDurationType = '24H' | '7D' | '30D' | 'FOREVER' | 'CUSTOM';
+
+export interface TripSubscription {
+  id: number;
+  userId: string;
+  originId: number;
+  destinationId: number;
+  durationType: SubscriptionDurationType;
+  expiresAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+  origin?: City;
+  destination?: City;
+}
+
 export interface UnreadChats {
   unreadCount: number;
   unreadByTrip: Record<number, number>;
