@@ -10,6 +10,7 @@ import usersRoutes from "./routes/users.js";
 import spRequestsRoutes from "./routes/spRequests.js";
 import matchesRoutes from "./routes/matches.js";
 import companyVehiclesRoutes from "./routes/companyVehicles.js";
+import subscriptionsRoutes from "./routes/subscriptions.js";
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use("/api/users", apiLimiter, usersRoutes);
 app.use("/api/sp-requests", apiLimiter, spRequestsRoutes);
 app.use("/api/matches", apiLimiter, matchesRoutes);
 app.use("/api/company-vehicles", apiLimiter, companyVehiclesRoutes);
+app.use("/api/subscriptions", apiLimiter, subscriptionsRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
