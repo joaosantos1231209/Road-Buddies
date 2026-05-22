@@ -89,3 +89,19 @@ export const sendMessageSchema = z.object({
 export const fcmTokenSchema = z.object({
   token: z.string().min(1, "Token obrigatório"),
 });
+
+const durationTypeEnum = z.enum(["24H", "7D", "30D", "FOREVER", "CUSTOM"]);
+
+export const createSubscriptionSchema = z.object({
+  originId: z.coerce.number().int().positive("Origem obrigatória"),
+  destinationId: z.coerce.number().int().positive("Destino obrigatório"),
+  durationType: durationTypeEnum,
+  expiresAt: z.string().nullable().optional(),
+});
+
+export const editSubscriptionSchema = z.object({
+  originId: z.coerce.number().int().positive().optional(),
+  destinationId: z.coerce.number().int().positive().optional(),
+  durationType: durationTypeEnum.optional(),
+  expiresAt: z.string().nullable().optional(),
+});
