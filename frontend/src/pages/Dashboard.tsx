@@ -10,7 +10,8 @@ import { ProximasViagens } from './ProximasViagens';
 import { MinhasViagens } from './MinhasViagens';
 import { CriarViagem } from './CriarViagem';
 import { SolicitarViatura } from './SolicitarViatura';
-import { Home, CalendarDays, History, User, Settings, Menu, X, Plus, Car, Check } from 'lucide-react';
+import { Subscricoes } from './Subscricoes';
+import { Home, CalendarDays, History, User, Settings, Menu, X, Plus, Car, Check, Bell } from 'lucide-react';
 
 function Header({ onNavigate, onToggleSidebar, isMobile, showActions = true, userInitials = 'U', userAvatar = '' }: any) {
   const [imgError, setImgError] = useState(false);
@@ -102,6 +103,7 @@ export default function Dashboard() {
     { id: 'dashboard', label: 'Dashboard', icon: <Home size={18} /> },
     { id: 'proximas', label: 'Próximas Viagens', icon: <CalendarDays size={18} /> },
     { id: 'minhas', label: 'Minhas Viagens', icon: <History size={18} /> },
+    { id: 'subscricoes', label: 'Subscrições', icon: <Bell size={18} /> },
     { id: 'perfil', label: 'Perfil', icon: <User size={18} /> },
     ...(isMobile ? [
       { id: 'criar', label: 'Publicar Viagem', icon: <Plus size={18} /> },
@@ -161,6 +163,16 @@ export default function Dashboard() {
             <div style={S.content}>
               <p style={S.pageTitle}>Solicitar Viatura</p>
               <SolicitarViatura onNavigate={setPage} isMobile={isMobile} />
+            </div>
+          </>
+        );
+      case 'subscricoes':
+        return (
+          <>
+            <Header {...headerProps} showActions={false} />
+            <div style={S.content}>
+              <p style={S.pageTitle}>Subscrições</p>
+              <Subscricoes />
             </div>
           </>
         );

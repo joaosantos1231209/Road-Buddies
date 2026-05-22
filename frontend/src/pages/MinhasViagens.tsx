@@ -17,9 +17,7 @@ function HistoryStatusBadge({ t, dbUserId }: { t: any; dbUserId: string }) {
   const isCreator = sameUser(t.userId, dbUserId);
   const hasParticipants = Array.isArray(t.participants) && t.participants.length > 0;
   if (t.type === 'NEEDRIDE') {
-    return t.status === 'MATCHED'
-      ? <span style={S.badge('green')}>Concluída</span>
-      : <span style={S.badge('yellow')}>SEM MATCH</span>;
+    return <span style={S.badge('yellow')}>Não correspondida</span>;
   }
   if (t.type === 'PROVIDER' && isCreator) {
     return hasParticipants
@@ -109,7 +107,7 @@ export function MinhasViagens() {
       const hasParticipants = Array.isArray(t.participants) && t.participants.length > 0;
       let vs: string;
       if (isCancelled) vs = 'cancelada';
-      else if (t.type === 'NEEDRIDE') vs = t.status === 'MATCHED' ? 'concluida' : 'sem_match';
+      else if (t.type === 'NEEDRIDE') vs = 'sem_match';
       else if (t.type === 'PROVIDER' && isCreator) vs = hasParticipants ? 'concluida' : 'nao_correspondida';
       else vs = 'concluida';
       if (vs !== histFilterStatus) return false;
@@ -322,7 +320,7 @@ export function MinhasViagens() {
               >
                 <option value="">Todos os estados</option>
                 <option value="concluida">Concluída</option>
-                <option value="sem_match">Sem Match</option>
+                <option value="sem_match">Não correspondida (pedido)</option>
                 <option value="nao_correspondida">Não correspondida</option>
                 <option value="cancelada">Cancelada</option>
               </select>
@@ -436,7 +434,7 @@ export function MinhasViagens() {
               ) : selectedHistoryTrip.type === 'NEEDRIDE' && selectedHistoryTrip.userId === dbUser?.id ? (
                 <div>
                   <label style={{ ...S.label, marginBottom: '4px' }}>O seu papel</label>
-                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Seria passageiro</p>
+                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>{selectedHistoryTrip.status === 'MATCHED' ? 'Passageiro' : 'Seria passageiro'}</p>
                 </div>
               ) : (
                 <>
