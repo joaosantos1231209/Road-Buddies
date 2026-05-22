@@ -6,6 +6,7 @@ import { db } from "../db/index.js";
 import { trips, tripParticipants, matches, users, cities, companyVehicles } from "../db/schema.js";
 import { eq, and, or, inArray, ne, desc, sql } from "drizzle-orm";
 import { runMatchmaking } from "../services/matchmaking.js";
+import { notifySubscribers } from "../services/subscriptions.js";
 import { sendPassengerJoinedEmail, sendTripCancelledEmail } from "../lib/email.js";
 import { sendPassengerJoinedNotification, sendTripCancelledNotification } from "../services/fcm.js";
 import { hasCreatorConflict, hasParticipantConflict } from "../services/trips.js";
@@ -102,6 +103,10 @@ router.post("/", validateBody(createTripSchema), async (req: AuthenticatedReques
     }).returning();
 
     runMatchmaking(newTrip[0]!.id).catch(console.error);
+
+    if (type === TripType.PROVIDER) {
+      notifySubscribers(newTrip[0]!.id).catch(console.error);
+    }
 
     res.status(201).json({ trip: newTrip[0] });
   } catch (error) {
