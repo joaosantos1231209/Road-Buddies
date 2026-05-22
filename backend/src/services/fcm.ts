@@ -68,6 +68,18 @@ export const sendPassengerJoinedNotification = async (fcmToken: string, passenge
 };
 
 /**
+ * Sends a notification to a subscriber when a new PROVIDER trip matches their subscription.
+ */
+export const sendSubscriptionTripNotification = async (fcmToken: string, origin: string, destination: string, driverName: string) => {
+  return sendPushNotification(
+    fcmToken,
+    `Nova Oferta: ${origin} → ${destination}`,
+    `${driverName} publicou uma boleia para o teu trajeto subscrito.`,
+    { type: 'SUBSCRIPTION_TRIP_ALERT' }
+  );
+};
+
+/**
  * Sends a notification to passengers when a trip is cancelled.
  */
 export const sendTripCancelledNotification = async (fcmToken: string, driverName: string, tripInfo: string) => {

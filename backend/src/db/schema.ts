@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, timestamp, integer, boolean, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, varchar, timestamp, integer, boolean, index, uniqueIndex, pgEnum } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -110,6 +110,26 @@ export const messages = pgTable('messages', {
   index('messages_trip_id_idx').on(t.tripId),
   index('messages_created_at_idx').on(t.createdAt),
 ]);
+
+export const tripSubscriptions = pgTable('trip_subscriptions', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  originId: integer('origin_id').notNull().references(() => cities.id),
+  destinationId: integer('destination_id').notNull().references(() => cities.id),
+  durationType: varchar('duration_type', { length: 20 }).notNull(), // 24H | 7D | 30D | FOREVER | CUSTOM
+  expiresAt: timestamp('expires_at', { withTimezone: true }), // null = FOREVER
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex('trip_subscriptions_user_origin_dest_idx').on(t.userId, t.originId, t.destinationId),
+  index('trip_subscriptions_active_idx').on(t.isActive),
+]);
+
+export const tripSubscriptionsRelations = relations(tripSubscriptions, ({ one }) => ({
+  user: one(users, { fields: [tripSubscriptions.userId], references: [users.id] }),
+  origin: one(cities, { fields: [tripSubscriptions.originId], references: [cities.id], relationName: 'subOrigin' }),
+  destination: one(cities, { fields: [tripSubscriptions.destinationId], references: [cities.id], relationName: 'subDestination' }),
+}));
 
 export const messagesRelations = relations(messages, ({ one }) => ({
   sender: one(users, {
