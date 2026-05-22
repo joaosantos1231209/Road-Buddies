@@ -107,6 +107,50 @@ export const sendPassengerJoinedEmail = async (driverEmail: string, passengerNam
   }, 'Passenger Joined');
 };
 
+export const sendSubscriptionTripAlertEmail = async (
+  to: string,
+  originName: string,
+  destinationName: string,
+  driverName: string,
+  departureTime: Date,
+  availableSeats: number,
+) => {
+  const dateStr = departureTime.toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  await maybeSend({
+    to,
+    subject: `Road Buddies - Nova Oferta: ${originName} → ${destinationName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <h2 style="color: #0f172a;">Nova Oferta de Boleia Disponível!</h2>
+        <p>Existe uma nova oferta que corresponde à tua subscrição:</p>
+        <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
+          <tr><td style="padding: 8px; font-weight:600; color:#1E3A5F;">Trajeto</td><td style="padding: 8px;">${originName} → ${destinationName}</td></tr>
+          <tr style="background:#f8fafc;"><td style="padding: 8px; font-weight:600; color:#1E3A5F;">Condutor</td><td style="padding: 8px;">${driverName}</td></tr>
+          <tr><td style="padding: 8px; font-weight:600; color:#1E3A5F;">Partida</td><td style="padding: 8px;">${dateStr}</td></tr>
+          <tr style="background:#f8fafc;"><td style="padding: 8px; font-weight:600; color:#1E3A5F;">Lugares disponíveis</td><td style="padding: 8px;">${availableSeats}</td></tr>
+        </table>
+        <p>Apresse-se para garantir o seu lugar!</p>
+        <a href="${FRONTEND_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #1E3A5F; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 8px;">Ver no Dashboard</a>
+      </div>
+    `,
+  }, 'Subscription Trip Alert');
+};
+
+export const sendSubscriptionExpiredEmail = async (to: string, originName: string, destinationName: string) => {
+  await maybeSend({
+    to,
+    subject: `Road Buddies - Subscrição Expirada: ${originName} → ${destinationName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <h2 style="color: #0f172a;">Subscrição de Notificações Expirada</h2>
+        <p>A tua subscrição de alertas para o trajeto <strong>${originName} → ${destinationName}</strong> expirou.</p>
+        <p>Se pretenderes continuar a receber notificações para este trajeto, podes criar uma nova subscrição na plataforma.</p>
+        <a href="${FRONTEND_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #1E3A5F; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 8px;">Aceder à Plataforma</a>
+      </div>
+    `,
+  }, 'Subscription Expired');
+};
+
 export const sendTripCancelledEmail = async (passengerEmail: string, driverName: string, tripInfo: string) => {
   await maybeSend({
     to: passengerEmail,
