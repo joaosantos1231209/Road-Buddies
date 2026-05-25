@@ -17,7 +17,7 @@ graph LR
     G5([Colaborador pede Viatura])
 
     %% 3. MOTOR
-    API{{Integração SendGrid}}
+    API{{Envio SMTP / SendGrid}}
 
     %% 4. TIPOS DE E-MAIL
     M1[1. Código OTP de Verificação]
