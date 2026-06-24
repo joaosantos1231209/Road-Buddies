@@ -37,8 +37,7 @@ export const runMatchmaking = async (newTripId: number) => {
       const providerTrip = trip.type === TripType.PROVIDER ? trip : matchTrip;
       const seekerTrip = trip.type === TripType.NEEDRIDE ? trip : matchTrip;
 
-      const [pUser, sUser, destCity] = await Promise.all([
-        db.query.users.findFirst({ where: eq(users.id, providerTrip.userId) }),
+      const [sUser, destCity] = await Promise.all([
         db.query.users.findFirst({ where: eq(users.id, seekerTrip.userId) }),
         db.query.cities.findFirst({ where: eq(cities.id, providerTrip.destinationId) }),
       ]);
@@ -47,7 +46,6 @@ export const runMatchmaking = async (newTripId: number) => {
 
       if (sUser?.email) sendMatchFoundEmail(sUser.email, providerTripId).catch(console.error);
       if (sUser?.fcmToken) sendMatchNotification(sUser.fcmToken, tripSummary).catch(console.error);
-      if (pUser?.fcmToken) sendMatchNotification(pUser.fcmToken, tripSummary).catch(console.error);
 
       console.log(`[Algorithm] Novo Match: ProviderTrip ${providerTripId} cruzado com SeekerTrip ${seekerTripId}`);
     }

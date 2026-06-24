@@ -129,6 +129,9 @@ describe('Comunicação (Chat)', () => {
     cy.contains('button', 'Enviar').click();
 
     cy.wait('@sendMessage');
+
+    // Após envio, o campo deve ficar vazio
+    cy.get('input[placeholder="Escreva a sua mensagem..."]').should('have.value', '');
   });
 
   it('deve mostrar indicador de chat vazio quando não há mensagens', () => {

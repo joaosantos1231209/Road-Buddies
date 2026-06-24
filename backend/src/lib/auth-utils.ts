@@ -15,16 +15,16 @@ export const generateVerificationCode = (): string => {
 export const isEmailAllowed = (email: string, allowedEmails: string[] = []): boolean => {
   if (!email) return false;
   const emailLower = email.toLowerCase();
-  
+
   // Verifica domínio @loba.com
   if (emailLower.endsWith('@loba.com')) return true;
-  
+
   // Verifica whitelist (exceções)
   return allowedEmails.map(e => e.toLowerCase()).includes(emailLower);
 };
 
 /**
- * Verifica se um código de verificação ainda é válido (ex: 30 minutos).
+ * Verifica se um código de verificação ainda é válido (30 minutos).
  */
 export const isCodeExpired = (createdAt: Date, expiryMinutes: number = 30): boolean => {
   const now = new Date();

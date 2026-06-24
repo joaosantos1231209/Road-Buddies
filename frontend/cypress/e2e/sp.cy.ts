@@ -14,6 +14,44 @@ describe('Solicitar Viatura SP', () => {
     cy.intercept('GET', '**/api/trips', { body: { trips: [] } }).as('getTrips');
   });
 
+  it('deve mostrar erro ao tentar submeter sem preencher campos obrigatórios', () => {
+    cy.visit('/dashboard');
+    cy.waitForApp();
+
+    cy.viewport(1280, 720);
+    cy.contains('Solicitar Viatura (SP)').click();
+    cy.contains('Solicitar Viatura').should('be.visible');
+
+    // Submeter sem preencher nada
+    cy.get('form').submit();
+
+    // Deve mostrar erro de validação (campos em falta)
+    cy.contains('Por favor, selecione a origem, o destino e a data pretendida.').should('be.visible');
+  });
+
+  it('deve mostrar erro ao selecionar origem igual ao destino', () => {
+    cy.visit('/dashboard');
+    cy.waitForApp();
+
+    cy.viewport(1280, 720);
+    cy.contains('Solicitar Viatura (SP)').click();
+
+    cy.contains('label', 'Origem').parent().find('button').click();
+    cy.get('[role="dialog"]', { timeout: 5000 }).contains('Lisboa').click();
+    cy.get('[role="dialog"]').should('not.exist');
+
+    cy.contains('label', 'Destino').parent().find('button').click();
+    cy.get('[role="dialog"]', { timeout: 5000 }).contains('Lisboa').click();
+    cy.get('[role="dialog"]').should('not.exist');
+
+    cy.contains('label', 'Data Necessária').next('input').type(tomorrow);
+    cy.contains('label', 'Justificação').next('textarea').type('Teste de validação');
+
+    cy.get('form').submit();
+
+    cy.contains('A origem e o destino têm de ser diferentes').should('be.visible');
+  });
+
   it('deve submeter o formulário de Solicitação de Viatura (SP)', () => {
     cy.intercept('POST', '**/api/sp-requests', {
       statusCode: 201,

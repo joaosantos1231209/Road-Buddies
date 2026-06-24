@@ -69,6 +69,10 @@ describe('Gestão de Viagens', () => {
     
     cy.contains('Reservar').first().click();
     cy.wait('@joinTrip');
+
+    // Após reserva, o botão de reservar não deve estar disponível para esta viagem
+    cy.contains('Condutor Mocked', { timeout: 10000 }).should('be.visible');
+    cy.contains('Reservar').should('not.exist');
   });
 
   it('deve navegar para o formulário de criação de viagem', () => {

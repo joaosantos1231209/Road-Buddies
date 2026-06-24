@@ -388,6 +388,8 @@ router.delete("/:id", async (req: AuthenticatedRequest, res: Response): Promise<
     if (!tripId) { res.status(400).json({ error: "ID de viagem inválido" }); return; }
     const userId = req.user.uid;
 
+    const restoredTripIds: number[] = [];
+
     await db.transaction(async (tx) => {
       const trip = await tx.query.trips.findFirst({
         where: and(eq(trips.id, tripId), eq(trips.userId, userId)),
@@ -415,7 +417,7 @@ router.delete("/:id", async (req: AuthenticatedRequest, res: Response): Promise<
             .returning();
 
           if (restored.length > 0) {
-            runMatchmaking(restored[0]!.id).catch(console.error);
+            restoredTripIds.push(restored[0]!.id);
           }
         }
       }
@@ -443,6 +445,10 @@ router.delete("/:id", async (req: AuthenticatedRequest, res: Response): Promise<
         if (p.user?.fcmToken) sendTripCancelledNotification(p.user.fcmToken, driverName, tripInfoStr).catch(console.error);
       }
     });
+
+    for (const id of restoredTripIds) {
+      runMatchmaking(id).catch(console.error);
+    }
 
     res.json({ message: "Viagem cancelada com sucesso" });
   } catch (error: unknown) {

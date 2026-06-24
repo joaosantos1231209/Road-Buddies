@@ -11,16 +11,24 @@ describe('Navegação e Autenticação Geral', () => {
     cy.visit('/dashboard');
     cy.waitForApp();
 
+    // Dashboard — verifica conteúdo específico da secção
     cy.contains('Dashboard').should('be.visible');
+    cy.contains('Criar Oferta / Pedido').should('be.visible');
 
+    // Próximas Viagens — verifica que carrega a lista (mesmo que vazia)
     cy.contains('Próximas Viagens').click();
-    cy.contains('Próximas Viagens').should('be.visible');
-    
+    cy.url().should('include', '/dashboard');
+    cy.contains('Nenhuma viagem encontrada com os filtros selecionados.').should('be.visible');
+
+    // Minhas Viagens — verifica tabs de conteúdo
     cy.contains('Minhas Viagens').click();
     cy.contains('Histórico').should('be.visible');
+    cy.contains('Matches').should('be.visible');
 
+    // Perfil — verifica dados do utilizador mockado
     cy.contains('Perfil').click();
     cy.contains('Informações Pessoais').should('be.visible');
+    cy.contains('João Santos').should('be.visible');
   });
 
   it('deve realizar logout com sucesso e limpar sessão', () => {
