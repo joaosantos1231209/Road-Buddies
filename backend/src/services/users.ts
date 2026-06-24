@@ -10,7 +10,7 @@ export async function validateLicensePlate(plate: string, excludeUserId: string)
   const conflict = await db.query.users.findFirst({
     where: and(
       ne(users.id, excludeUserId),
-      sql`${users.vehicleInfo}::jsonb->>'plate' ILIKE ${plate}`
+      sql`JSON_UNQUOTE(JSON_EXTRACT(${users.vehicleInfo}, '$.plate')) LIKE ${plate}`
     ),
     columns: { id: true },
   });

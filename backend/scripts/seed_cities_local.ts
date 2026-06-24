@@ -18,10 +18,9 @@ async function main() {
     try {
       await db.insert(cities)
         .values({ name: cityName, isOffice: isOffice, isActive: true })
-        .onConflictDoUpdate({
-           target: cities.name,
+        .onDuplicateKeyUpdate({
            set: { isOffice: isOffice }
-        });
+         });
       ok++;
     } catch (e: any) {
       console.error(`Erro inserir ${cityName}:`, e.message);

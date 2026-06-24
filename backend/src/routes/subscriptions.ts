@@ -55,17 +55,18 @@ router.post("/", validateBody(createSubscriptionSchema), async (req: Authenticat
 
     const computedExpiresAt = computeExpiry(durationType, expiresAt);
 
-    const [sub] = await db.insert(tripSubscriptions).values({
+    const insertResult = await db.insert(tripSubscriptions).values({
       userId,
       originId,
       destinationId,
       durationType,
       expiresAt: computedExpiresAt,
       isActive: true,
-    }).returning();
+    });
+    const insertId = (insertResult as any)[0]?.insertId;
 
     const full = await db.query.tripSubscriptions.findFirst({
-      where: eq(tripSubscriptions.id, sub!.id),
+      where: eq(tripSubscriptions.id, insertId),
       with: { origin: true, destination: true },
     });
 

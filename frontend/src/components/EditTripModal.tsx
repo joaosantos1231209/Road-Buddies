@@ -70,7 +70,13 @@ export function EditTripModal({ trip, citiesData, onClose, onSave, isSaving, err
     onSave(payload);
   };
 
-  const canSubmit = !isSaving && (!isCompany || (!!selectedVehicleId && !!returnDate));
+  const parsedVehicle = getVehicleObj(dbUser?.vehicleInfo);
+  const hasPersonalVehicle = !!(parsedVehicle && parsedVehicle.brand);
+
+  const canSubmit = !isSaving && (
+    (isCompany && !!selectedVehicleId && !!returnDate) ||
+    (!isCompany && hasPersonalVehicle)
+  );
 
   return (
     <div

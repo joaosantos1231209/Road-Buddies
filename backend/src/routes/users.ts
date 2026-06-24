@@ -31,11 +31,12 @@ router.get("/", requireAdmin, async (req, res) => {
 router.put("/:id/verify", requireAdmin, async (req, res) => {
   const { isVerified } = req.body;
   try {
-    const [updatedUser] = await db
+    await db
       .update(users)
       .set({ isVerified: !!isVerified })
-      .where(eq(users.id, req.params.id as string))
-      .returning();
+      .where(eq(users.id, req.params.id as string));
+
+    const updatedUser = await db.query.users.findFirst({ where: eq(users.id, req.params.id as string) });
 
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
     res.json(updatedUser);
@@ -48,11 +49,12 @@ router.put("/:id/verify", requireAdmin, async (req, res) => {
 router.put("/:id/admin", requireAdmin, async (req, res) => {
   const { isAdmin } = req.body;
   try {
-    const [updatedUser] = await db
+    await db
       .update(users)
       .set({ isAdmin: !!isAdmin })
-      .where(eq(users.id, req.params.id as string))
-      .returning();
+      .where(eq(users.id, req.params.id as string));
+
+    const updatedUser = await db.query.users.findFirst({ where: eq(users.id, req.params.id as string) });
 
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
     res.json(updatedUser);
@@ -102,15 +104,16 @@ router.put("/profile", requireAuth, validateBody(updateProfileSchema), async (re
       } catch { /* not JSON, ignore */ }
     }
 
-    const [updatedUser] = await db
+    await db
       .update(users)
       .set({
         username: username?.trim() || undefined,
         phone: phone?.trim() || undefined,
         vehicleInfo,
       })
-      .where(eq(users.id, userId))
-      .returning();
+      .where(eq(users.id, userId));
+
+    const updatedUser = await db.query.users.findFirst({ where: eq(users.id, userId) });
 
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
     res.json(updatedUser);

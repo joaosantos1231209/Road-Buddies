@@ -1,33 +1,12 @@
 {
   "version": "7",
-  "dialect": "postgresql",
+  "dialect": "mysql",
   "entries": [
     {
       "idx": 0,
-      "version": "7",
-      "when": 1773683013330,
-      "tag": "0000_uneven_rogue",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776697741434,
-      "tag": "0001_nasty_jackal",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1777478250982,
-      "tag": "0002_clammy_cyclops",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1777971915283,
-      "tag": "0003_tense_warlock",
+      "version": "5",
+      "when": 1782302220098,
+      "tag": "0000_stiff_imperial_guard",
       "breakpoints": true
     }
   ]

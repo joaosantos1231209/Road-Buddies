@@ -30,13 +30,15 @@ router.post("/", validateBody(createSpRequestSchema), async (req: AuthenticatedR
       db.query.cities.findFirst({ where: eq(cities.id, destinationId) }),
     ]);
 
-    const [request] = await db.insert(spRequests).values({
+    const insertResult = await db.insert(spRequests).values({
       userId,
       originId: originId ?? null,
       destinationId,
       dateNeeded: new Date(dateNeeded),
       justification,
-    }).returning();
+    });
+    const insertId = (insertResult as any)[0]?.insertId;
+    const request = await db.query.spRequests.findFirst({ where: eq(spRequests.id, insertId) });
 
     const collaboratorEmail = collaborator?.email || "colaborador@empresa.pt";
     const collaboratorName = collaborator?.username || "Colaborador";

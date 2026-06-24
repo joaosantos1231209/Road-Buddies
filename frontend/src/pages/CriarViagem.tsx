@@ -120,7 +120,8 @@ export function CriarViagem({ onNavigate, isMobile }: Props) {
 
     if (tripType === 'PROVIDER') {
       if (viatura === 'Viatura Pessoal') {
-        if (!dbUser?.vehicleInfo) {
+        const parsedVehicle = getVehicleObj(dbUser?.vehicleInfo);
+        if (!parsedVehicle || !parsedVehicle.brand) {
           setCreateError('Selecionou viatura pessoal mas não tem viatura pessoal associada à sua conta. Dirija-se ao seu perfil e preencha os dados da sua viatura.');
           return;
         }
