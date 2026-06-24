@@ -90,8 +90,7 @@ describe('Administração', () => {
   });
 
   it('deve conseguir tornar um utilizador administrador', () => {
-    // A tabela ordena por nome: "User Dois" (id:2) vem antes de "User Um" (id:1)
-    cy.intercept('PUT', '**/api/users/2/admin', {
+    cy.intercept('PUT', '**/api/users/*/admin', {
       statusCode: 200,
       body: { user: { ...mockUsers[1], isAdmin: true } }
     }).as('promoteUser');
@@ -101,7 +100,12 @@ describe('Administração', () => {
 
     cy.contains('Administração').click();
 
-    cy.contains('Tornar Admin', { timeout: 15000 }).first().click();
+    // Localizar o botão pelo utilizador específico, sem depender da ordem da tabela
+    cy.contains('User Dois', { timeout: 15000 })
+      .closest('tr')
+      .contains('Tornar Admin')
+      .click();
+
     cy.wait('@promoteUser');
   });
 

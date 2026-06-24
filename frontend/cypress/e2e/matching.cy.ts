@@ -63,7 +63,7 @@ describe('Fluxo de Correspondência (Matching)', () => {
     cy.contains('Lisboa → Porto').should('be.visible');
   });
 
-  it('deve permitir marcar um match como lido', () => {
+  it('deve permitir marcar um match como lido e remover o badge', () => {
     cy.intercept('GET', '**/api/matches', {
       body: { matches: [mockMatch] }
     }).as('getMatches');
@@ -77,10 +77,21 @@ describe('Fluxo de Correspondência (Matching)', () => {
     cy.waitForApp();
     cy.wait('@getMatches');
 
+    // Badge visível antes de entrar na aba
+    cy.contains('Minhas Viagens').find('span').should('be.visible');
+
+    // Redefinir o intercept após o primeiro request já ter sido servido,
+    // para que as chamadas seguintes retornem o match como lido
+    cy.intercept('GET', '**/api/matches', {
+      body: { matches: [{ ...mockMatch, isRead: true }] }
+    }).as('getMatchesAfterRead');
+
     cy.contains('Minhas Viagens').click();
     cy.get('button').contains('Matches').click();
 
-    // Ao entrar na aba de matches, a mutation markMatchesReadMutation deve disparar
     cy.wait('@markRead');
+
+    // Badge deve desaparecer após marcar como lido
+    cy.contains('Minhas Viagens').find('span').should('not.exist');
   });
 });
