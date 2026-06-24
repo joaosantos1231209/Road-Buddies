@@ -30,8 +30,9 @@ router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Respons
     if (existingUser) {
       const updateData: { updatedAt: Date; avatarUrl?: string } = { updatedAt: new Date() };
       if (picture) updateData.avatarUrl = picture;
-      const updated = await db.update(users).set(updateData).where(eq(users.id, uid)).returning();
-      res.json({ user: updated[0] });
+      await db.update(users).set(updateData).where(eq(users.id, uid));
+      const updated = await db.query.users.findFirst({ where: eq(users.id, uid) });
+      res.json({ user: updated });
       return;
     }
 
@@ -43,7 +44,7 @@ router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Respons
     const code = generateVerificationCode();
     const expiry = new Date(Date.now() + 30 * 60 * 1000);
 
-    const newUser = await db.insert(users).values({
+    await db.insert(users).values({
       id: uid,
       email: email || "",
       username,
@@ -51,11 +52,13 @@ router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Respons
       isVerified: false,
       verificationCode: code,
       verificationExpiry: expiry,
-    }).returning();
+    });
+
+    const newUser = await db.query.users.findFirst({ where: eq(users.id, uid) });
 
     if (email) sendVerificationCode(email, code).catch(console.error);
 
-    res.status(201).json({ user: newUser[0] });
+    res.status(201).json({ user: newUser });
   } catch (error) {
     console.error("Erro a sincronizar utilizador:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -88,12 +91,13 @@ router.post("/verify", requireAuth, validateBody(verifyCodeSchema), async (req: 
       return;
     }
 
-    const updated = await db.update(users)
+    await db.update(users)
       .set({ isVerified: true, verificationCode: null, verificationExpiry: null, updatedAt: new Date() })
-      .where(eq(users.id, uid))
-      .returning();
+      .where(eq(users.id, uid));
 
-    res.json({ user: updated[0] });
+    const updated = await db.query.users.findFirst({ where: eq(users.id, uid) });
+
+    res.json({ user: updated });
   } catch (error) {
     console.error("Erro a verificar código:", error);
     res.status(500).json({ error: "Internal Server Error" });

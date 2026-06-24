@@ -148,7 +148,9 @@ router.post("/trip/:tripId", validateBody(sendMessageSchema), async (req: Authen
     if (!trip) return res.status(403).json({ error: "Forbidden" });
     if (trip.status === 'CANCELLED') return res.status(400).json({ error: "Não é possível enviar mensagens numa viagem cancelada." });
 
-    const newMessage = await db.insert(messages).values({ tripId, senderId, content, isRead: false }).returning();
+    const insertResult = await db.insert(messages).values({ tripId, senderId, content, isRead: false });
+    const insertId = (insertResult as any)[0]?.insertId;
+    const newMessage = await db.query.messages.findFirst({ where: eq(messages.id, insertId) });
 
     // Fire-and-forget FCM notifications
     (async () => {
@@ -172,7 +174,7 @@ router.post("/trip/:tripId", validateBody(sendMessageSchema), async (req: Authen
       } catch (err) { console.error("[FCM] Error:", err); }
     })();
 
-    res.status(201).json({ message: newMessage[0] });
+    res.status(201).json({ message: newMessage });
   } catch (error) { res.status(500).json({ error: "Internal Server Error" }); }
 });
 

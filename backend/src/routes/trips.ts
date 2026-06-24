@@ -47,7 +47,13 @@ router.post("/", validateBody(createTripSchema), async (req: AuthenticatedReques
     let resolvedVehicleDetails = tripVehicleDetails ?? null;
     let returnDate: Date | null = null;
 
-    if (type === TripType.PROVIDER && companyVehicleId) {
+    if (type === TripType.PROVIDER) {
+      if (!companyVehicleId && (!tripVehicleDetails || tripVehicleDetails === 'null' || tripVehicleDetails === '{}')) {
+        res.status(400).json({ error: "Tens de ter um carro pessoal associado ou escolher uma viatura da empresa para oferecer boleia." });
+        return;
+      }
+
+      if (companyVehicleId) {
       if (!returnTime) {
         res.status(400).json({ error: "A data de retorno é obrigatória quando se usa viatura da empresa." });
         return;
@@ -87,8 +93,9 @@ router.post("/", validateBody(createTripSchema), async (req: AuthenticatedReques
 
       resolvedVehicleDetails = JSON.stringify({ brand: `${vehicle.brand} ${vehicle.model}`, plate: vehicle.plate });
     }
+    }
 
-    const newTrip = await db.insert(trips).values({
+    const insertResult = await db.insert(trips).values({
       userId,
       type,
       originId,
@@ -100,15 +107,17 @@ router.post("/", validateBody(createTripSchema), async (req: AuthenticatedReques
       tripVehicleDetails: resolvedVehicleDetails,
       companyVehicleId: (type === TripType.PROVIDER && companyVehicleId) ? companyVehicleId : null,
       status: TripStatus.ACTIVE,
-    }).returning();
+    });
+    const newTripId = (insertResult as any)[0]?.insertId;
+    const newTrip = await db.query.trips.findFirst({ where: eq(trips.id, newTripId) });
 
-    runMatchmaking(newTrip[0]!.id).catch(console.error);
+    runMatchmaking(newTrip!.id).catch(console.error);
 
     if (type === TripType.PROVIDER) {
-      notifySubscribers(newTrip[0]!.id).catch(console.error);
+      notifySubscribers(newTrip!.id).catch(console.error);
     }
 
-    res.status(201).json({ trip: newTrip[0] });
+    res.status(201).json({ trip: newTrip });
   } catch (error) {
     console.error("Error creating trip:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -405,19 +414,25 @@ router.delete("/:id", async (req: AuthenticatedRequest, res: Response): Promise<
 
       if (trip.type === TripType.PROVIDER) {
         for (const p of trip.participants) {
-          const restored = await tx.update(trips)
-            .set({ status: TripStatus.ACTIVE, hidden: false })
-            .where(and(
+          // First find the trips that match, then update them
+          const matchingTrips = await tx.query.trips.findMany({
+            where: and(
               eq(trips.userId, p.userId),
               eq(trips.type, TripType.NEEDRIDE),
               eq(trips.status, TripStatus.MATCHED),
               eq(trips.originId, trip.originId),
               eq(trips.destinationId, trip.destinationId),
-            ))
-            .returning();
+            ),
+            columns: { id: true },
+          });
 
-          if (restored.length > 0) {
-            restoredTripIds.push(restored[0]!.id);
+          if (matchingTrips.length > 0) {
+            const matchingIds = matchingTrips.map(t => t.id);
+            await tx.update(trips)
+              .set({ status: TripStatus.ACTIVE, hidden: false })
+              .where(inArray(trips.id, matchingIds));
+
+            restoredTripIds.push(...matchingIds);
           }
         }
       }

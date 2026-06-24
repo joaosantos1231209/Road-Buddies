@@ -1,7 +1,7 @@
-import { pgTable, serial, text, varchar, timestamp, integer, boolean, index, uniqueIndex, pgEnum } from 'drizzle-orm/pg-core';
+import { mysqlTable, serial, text, varchar, timestamp, int, boolean, index, uniqueIndex } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 
-export const users = pgTable('users', {
+export const users = mysqlTable('users', {
   id: varchar('id', { length: 128 }).primaryKey(), // Firebase UID
   email: varchar('email', { length: 255 }).notNull().unique(),
   username: varchar('username', { length: 255 }).notNull().unique(),
@@ -12,44 +12,44 @@ export const users = pgTable('users', {
   isVerified: boolean('is_verified').default(false).notNull(),
   verificationCode: varchar('verification_code', { length: 10 }),
   verificationExpiry: timestamp('verification_expiry'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
   fcmToken: text('fcm_token'),
 });
 
-export const cities = pgTable('cities', {
-  id: serial('id').primaryKey(),
+export const cities = mysqlTable('cities', {
+  id: int('id').autoincrement().primaryKey(),
   name: varchar('name', { length: 255 }).notNull().unique(),
   isActive: boolean('is_active').default(true).notNull(),
   isOffice: boolean('is_office').default(false).notNull(),
 });
 
-export const companyVehicles = pgTable('company_vehicles', {
-  id: serial('id').primaryKey(),
+export const companyVehicles = mysqlTable('company_vehicles', {
+  id: int('id').autoincrement().primaryKey(),
   brand: varchar('brand', { length: 100 }).notNull(),
   model: varchar('model', { length: 100 }).notNull(),
   plate: varchar('plate', { length: 10 }).notNull().unique(),
-  officeId: integer('office_id').notNull().references(() => cities.id),
+  officeId: int('office_id').notNull().references(() => cities.id),
   isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const trips = pgTable('trips', {
-  id: serial('id').primaryKey(),
+export const trips = mysqlTable('trips', {
+  id: int('id').autoincrement().primaryKey(),
   userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id),
   type: varchar('type', { length: 20 }).notNull(),
-  originId: integer('origin_id').notNull().references(() => cities.id),
-  destinationId: integer('destination_id').notNull().references(() => cities.id),
-  departureTime: timestamp('departure_time', { withTimezone: true }).notNull(),
-  returnTime: timestamp('return_time', { withTimezone: true }),
-  availableSeats: integer('available_seats').notNull().default(0),
+  originId: int('origin_id').notNull().references(() => cities.id),
+  destinationId: int('destination_id').notNull().references(() => cities.id),
+  departureTime: timestamp('departure_time').notNull(),
+  returnTime: timestamp('return_time'),
+  availableSeats: int('available_seats').notNull().default(0),
   vehicleType: text('vehicle_type'),
   tripVehicleDetails: text('trip_vehicle_details'),
-  companyVehicleId: integer('company_vehicle_id').references(() => companyVehicles.id),
+  companyVehicleId: int('company_vehicle_id').references(() => companyVehicles.id),
   hidden: boolean('hidden').notNull().default(false),
   status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (t) => [
   index('trips_user_id_idx').on(t.userId),
   index('trips_status_idx').on(t.status),
@@ -57,32 +57,32 @@ export const trips = pgTable('trips', {
   index('trips_origin_dest_idx').on(t.originId, t.destinationId),
 ]);
 
-export const spRequests = pgTable('sp_requests', {
-  id: serial('id').primaryKey(),
+export const spRequests = mysqlTable('sp_requests', {
+  id: int('id').autoincrement().primaryKey(),
   userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  originId: integer('origin_id').references(() => cities.id),
-  destinationId: integer('destination_id').notNull().references(() => cities.id),
-  dateNeeded: timestamp('date_needed', { withTimezone: true }).notNull(),
+  originId: int('origin_id').references(() => cities.id),
+  destinationId: int('destination_id').notNull().references(() => cities.id),
+  dateNeeded: timestamp('date_needed').notNull(),
   justification: text('justification'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const tripParticipants = pgTable('trip_participants', {
-  id: serial('id').primaryKey(),
-  tripId: integer('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+export const tripParticipants = mysqlTable('trip_participants', {
+  id: int('id').autoincrement().primaryKey(),
+  tripId: int('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
   userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
 }, (t) => [
   uniqueIndex('trip_participants_unique_idx').on(t.tripId, t.userId),
   index('trip_participants_trip_id_idx').on(t.tripId),
   index('trip_participants_user_id_idx').on(t.userId),
 ]);
 
-export const matches = pgTable('matches', {
-  id: serial('id').primaryKey(),
-  providerTripId: integer('provider_trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
-  seekerTripId: integer('seeker_trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+export const matches = mysqlTable('matches', {
+  id: int('id').autoincrement().primaryKey(),
+  providerTripId: int('provider_trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  seekerTripId: int('seeker_trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
   status: varchar('status', { length: 20 }).notNull().default('PENDING'),
   isRead: boolean('is_read').default(false).notNull(),
 }, (t) => [
@@ -90,36 +90,36 @@ export const matches = pgTable('matches', {
   index('matches_seeker_trip_id_idx').on(t.seekerTripId),
 ]);
 
-export const chatReads = pgTable('chat_reads', {
-  id: serial('id').primaryKey(),
+export const chatReads = mysqlTable('chat_reads', {
+  id: int('id').autoincrement().primaryKey(),
   userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  tripId: integer('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
-  lastReadAt: timestamp('last_read_at', { withTimezone: true }).defaultNow().notNull(),
+  tripId: int('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  lastReadAt: timestamp('last_read_at').defaultNow().notNull(),
 }, (t) => [
   index('chat_reads_user_trip_idx').on(t.userId, t.tripId),
 ]);
 
-export const messages = pgTable('messages', {
+export const messages = mysqlTable('messages', {
   id: serial('id').primaryKey(),
-  tripId: integer('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
+  tripId: int('trip_id').notNull().references(() => trips.id, { onDelete: 'cascade' }),
   senderId: varchar('sender_id', { length: 128 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   isRead: boolean('is_read').default(false).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => [
   index('messages_trip_id_idx').on(t.tripId),
   index('messages_created_at_idx').on(t.createdAt),
 ]);
 
-export const tripSubscriptions = pgTable('trip_subscriptions', {
+export const tripSubscriptions = mysqlTable('trip_subscriptions', {
   id: serial('id').primaryKey(),
   userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  originId: integer('origin_id').notNull().references(() => cities.id),
-  destinationId: integer('destination_id').notNull().references(() => cities.id),
+  originId: int('origin_id').notNull().references(() => cities.id),
+  destinationId: int('destination_id').notNull().references(() => cities.id),
   durationType: varchar('duration_type', { length: 20 }).notNull(), // 24H | 7D | 30D | FOREVER | CUSTOM
-  expiresAt: timestamp('expires_at', { withTimezone: true }), // null = FOREVER
+  expiresAt: timestamp('expires_at'), // null = FOREVER
   isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => [
   uniqueIndex('trip_subscriptions_user_origin_dest_idx').on(t.userId, t.originId, t.destinationId),
   index('trip_subscriptions_active_idx').on(t.isActive),

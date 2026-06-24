@@ -37,16 +37,16 @@ router.post("/", requireAdmin, async (req, res) => {
         isOffice: !!isOffice, 
         isActive: isActive !== false 
       })
-      .onConflictDoUpdate({
-        target: cities.name,
+      .onDuplicateKeyUpdate({
         set: { 
           isOffice: !!isOffice, 
           isActive: isActive !== false 
         }
-      })
-      .returning();
+      });
+
+    const upsertedCity = await db.query.cities.findFirst({ where: eq(cities.name, name) });
       
-    res.json(city);
+    res.json(upsertedCity);
   } catch (error: unknown) {
     console.error("Erro a criar/atualizar cidade:", error);
     res.status(500).json({ error: "Failed to create or update city" });

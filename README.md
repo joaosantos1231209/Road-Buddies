@@ -9,7 +9,7 @@ Plataforma interna de carpooling para colaboradores da LOBA. Permite criar e enc
 - **Node.js** v18 ou superior
 - **npm** v9 ou superior
 - Conta **Firebase** (Auth + Cloud Messaging)
-- Base de dados **PostgreSQL** (recomendado: [Supabase](https://supabase.com))
+- Base de dados **MySQL 8** (local via Docker ou serviço cloud)
 - Conta **SendGrid** (envio de e-mails)
 
 ---
@@ -18,7 +18,7 @@ Plataforma interna de carpooling para colaboradores da LOBA. Permite criar e enc
 
 ```
 Rode_Buddies/
-├── backend/          # API REST — Express 5 + Drizzle ORM + PostgreSQL
+├── backend/          # API REST — Express 5 + Drizzle ORM + MySQL
 │   ├── src/
 │   │   ├── db/       # Schema Drizzle e configuração da BD
 │   │   ├── lib/      # Utilitários partilhados (constantes, logger, validação)
@@ -69,7 +69,7 @@ cp backend/.env.example backend/.env
 Editar `backend/.env` com os valores reais:
 
 ```env
-DATABASE_URL="postgresql://user:password@host:port/database"
+DATABASE_URL="mysql://user:password@host:port/database"
 PORT=3000
 
 # Firebase Admin SDK — obtido em Project Settings > Service Accounts > Generate new private key
@@ -245,7 +245,7 @@ cd frontend && npm run build
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
-| `DATABASE_URL` | Sim | Connection string PostgreSQL |
+| `DATABASE_URL` | Sim | Connection string MySQL |
 | `PORT` | Não (3000) | Porta do servidor |
 | `FIREBASE_PROJECT_ID` | Sim | ID do projeto Firebase |
 | `FIREBASE_CLIENT_EMAIL` | Sim | E-mail do service account |

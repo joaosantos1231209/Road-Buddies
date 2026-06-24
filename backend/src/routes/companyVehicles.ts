@@ -94,10 +94,14 @@ router.post("/", requireAdmin, validateBody(createCompanyVehicleSchema), async (
       return;
     }
 
-    const [vehicle] = await db.insert(companyVehicles).values({ brand, model, plate: plate.toUpperCase(), officeId }).returning();
+    await db.insert(companyVehicles).values({ brand, model, plate: plate.toUpperCase(), officeId });
+    const vehicle = await db.query.companyVehicles.findFirst({
+      where: eq(companyVehicles.plate, plate.toUpperCase()),
+      with: { office: true },
+    });
     res.status(201).json(vehicle);
   } catch (error: any) {
-    if (error?.code === "23505") {
+    if (error?.code === "ER_DUP_ENTRY" || error?.errno === 1062) {
       res.status(400).json({ error: "Já existe um veículo com esta matrícula." });
       return;
     }
