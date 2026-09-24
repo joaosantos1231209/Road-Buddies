@@ -1,6 +1,10 @@
 # Road Buddies — Plataforma Corporativa de Carpooling & Gestão de Frotas
 
-<!-- VIDEO_PLACEHOLDER -->
+
+
+https://github.com/user-attachments/assets/acee21de-5996-4e9b-9908-d761f0237f90
+
+
 
 Plataforma corporativa *Full-Stack* desenvolvida para a **LOBA** focada em otimizar a mobilidade corporativa, promover a sustentabilidade e simplificar a gestão de viagens e viaturas de empresa entre diferentes escritórios e polos da organização.
 
