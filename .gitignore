@@ -22,6 +22,10 @@ out.log
 cypress/videos/
 cypress/screenshots/
 
+# Database backups
+*.sql
+
 # OS
 .DS_Store
 Thumbs.db
+
