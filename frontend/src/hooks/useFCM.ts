@@ -21,7 +21,27 @@ export const useFCM = (user: any) => {
 
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+          let swRegistration: ServiceWorkerRegistration | undefined;
+          if ('serviceWorker' in navigator) {
+            try {
+              const swQuery = new URLSearchParams({
+                apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+                authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+                projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+                storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+                messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+                appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+              }).toString();
+              swRegistration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${swQuery}`);
+            } catch (swErr) {
+              console.warn('[FCM] Falha ao registar service worker dinâmico:', swErr);
+            }
+          }
+
+          const token = await getToken(messaging, { 
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: swRegistration
+          });
           
           if (token) {
             console.log('[FCM] Token sincronizado.');
